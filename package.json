@@ -13,11 +13,11 @@
     "capture-tidalwave-demo": "node scripts/capture-tidalwave-demo.mjs"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.9",
+    "@astrojs/check": "^0.9.10",
     "@astrojs/sitemap": "^3.7.3",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
-    "astro": "^6.4.6",
-    "sharp": "^0.33.5",
+    "astro": "^7.1.6",
+    "sharp": "^0.35.3",
     "typescript": "^5.6.0"
   },
   "devDependencies": {
@@ -25,8 +25,9 @@
   },
   "pnpm": {
     "overrides": {
-      "fast-uri@<3.1.2": "3.1.2",
-      "js-yaml@>=4.0.0 <4.2.0": "4.2.0",
+      "fast-uri@<3.1.4": "3.1.4",
+      "js-yaml@>=4.0.0 <4.3.0": "4.3.0",
+      "svgo@>=4.0.0 <4.0.2": "4.0.2",
       "esbuild@>=0.27.3 <0.28.1": "0.28.1",
       "yaml@>=2.0.0 <2.8.3": "2.8.4"
     }

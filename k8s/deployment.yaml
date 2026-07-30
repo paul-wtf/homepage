@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: homepage
-          image: ghcr.io/spotifynutzeer/homepage:v0.1.9
+          image: ghcr.io/spotifynutzeer/homepage:v0.1.10
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

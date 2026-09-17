@@ -4,7 +4,10 @@ metadata:
   name: homepage
   namespace: homepage
 spec:
-  replicas: 1
+  # Zwei Replicas auf zwei Nodes: ein Node-Reboot (kured, ~alle paar Wochen)
+  # kostete sonst rund sieben Sekunden, in denen die Seite nicht antwortet --
+  # gemessen am 2026-09-10.
+  replicas: 2
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -18,6 +21,13 @@ spec:
       labels:
         app.kubernetes.io/name: homepage
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: homepage
       containers:
         - name: homepage
           image: ghcr.io/spotifynutzeer/homepage:v0.1.10

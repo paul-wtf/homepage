@@ -140,6 +140,9 @@ const links = [
       background var(--dur-fast) var(--ease);
   }
   .toggle[hidden] { display: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .toggle { transition: none; }
+  }
   .toggle:hover,
   .toggle[aria-pressed='true'] {
     color: var(--text);

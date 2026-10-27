@@ -350,6 +350,40 @@ const keys = [
     color: var(--subtext0);
     font-size: 0.86rem;
   }
+  .wm-window > .term {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    font-size: 0.86rem;
+    line-height: 1.55;
+    scrollbar-color: var(--surface1) transparent;
+    scrollbar-width: thin;
+  }
+  .wm-window .term-row {
+    color: var(--text);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .wm-window .term-row.is-err { color: var(--red); }
+  .wm-window .term-row.is-ok { color: var(--green); }
+  .wm-window .term-prompt { color: var(--teal); }
+  .wm-window .term-line {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5ch;
+  }
+  .wm-window .term-line input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    outline: none;
+    background: none;
+    color: var(--text);
+    caret-color: var(--teal);
+    font: inherit;
+  }
+
   .wm-window kbd {
     min-width: 1.6em;
     padding: 0.05rem 0.4rem;

@@ -1,6 +1,7 @@
 import { dwindle, type Rect } from './layout';
 import { initScrollFocus } from '../scroll-focus';
 import { revealEmails } from '../contact-actions';
+import { createTerminal } from './terminal';
 
 export interface DesktopApi {
   enter(ws?: number): void;
@@ -30,6 +31,7 @@ const SLIDE_MS = 420;
 const CLOSE_MS = 180;
 const MODE_KEY = 'paulwtf:mode';
 const SEEN_KEY = 'paulwtf:keybinds-seen';
+const INTERACTIVE = 'button, a, input, textarea, select, [contenteditable]';
 const QUALIFIES = '(min-width: 900px) and (pointer: fine)';
 
 function readStore(key: string): string | null {
@@ -156,7 +158,9 @@ export function initDesktop(): DesktopApi {
     if (!on || !el || !space?.wins.includes(el)) return;
     space.focus = el;
     for (const w of space.wins) w.classList.toggle('is-focus', w === el);
-    if (moveDom && !el.contains(document.activeElement)) el.focus({ preventScroll: true });
+    if (moveDom && !el.contains(document.activeElement)) {
+      (el.querySelector<HTMLElement>('.term input') ?? el).focus({ preventScroll: true });
+    }
   }
 
   function refreshBar(): void {
@@ -294,6 +298,17 @@ export function initDesktop(): DesktopApi {
     if (on) add(makeWindow(content, content.dataset.label ?? ''));
   }
 
+  function openTerminal(): void {
+    let win: HTMLElement | null = null;
+    const term = createTerminal({
+      go,
+      close: () => win && closeWindow(win),
+      live: () => null,
+    });
+    openWindow(term);
+    win = term.closest<HTMLElement>('.wm-window');
+  }
+
   function openKeybinds(): void {
     const open = ws(cur)?.wins.find((w) => w.dataset.keybinds !== undefined);
     if (open) setFocus(open);
@@ -303,20 +318,27 @@ export function initDesktop(): DesktopApi {
     }
   }
 
-  function closeFocused(): void {
+  function closeWindow(el: HTMLElement): void {
     const space = ws(cur);
-    const el = space?.focus;
-    if (!on || !space || !el) return;
-    const i = space.wins.indexOf(el);
+    const i = space?.wins.indexOf(el) ?? -1;
+    if (!on || !space || i < 0) return;
+    const wasFocus = space.focus === el;
     space.wins.splice(i, 1);
     if (space.full === el) space.full = null;
-    space.focus = null;
     el.classList.remove('is-focus');
     el.classList.add('is-closing');
     setTimeout(() => el.remove(), ms(CLOSE_MS));
     layout(cur);
-    setFocus(space.wins[Math.max(0, i - 1)]);
+    if (wasFocus) {
+      space.focus = null;
+      setFocus(space.wins[Math.max(0, i - 1)]);
+    }
     refreshBar();
+  }
+
+  function closeFocused(): void {
+    const el = ws(cur)?.focus;
+    if (el) closeWindow(el);
   }
 
   function toggleFull(): void {
@@ -376,6 +398,9 @@ export function initDesktop(): DesktopApi {
       go(Number(k));
     } else if (k === 'escape') {
       leave();
+    } else if (k === 'enter') {
+      if ((e.target as Element | null)?.closest?.(INTERACTIVE)) return;
+      if (!e.repeat) openTerminal();
     } else if (k === 'q') {
       closeFocused();
     } else if (k === 'f') {

@@ -1,20 +1,7 @@
 ---
-import type { ImageMetadata } from 'astro';
 import { projects } from '../data/projects';
+import { previews } from '../data/previews';
 import ProjectCard from './ProjectCard.astro';
-
-// Match previews by filename: `<project.name>-preview.<ext>` in src/assets/.
-// A featured project renders with its preview once the asset exists — no code
-// change needed when a new screenshot is added (e.g. via `pnpm capture-previews`).
-const previewModules = import.meta.glob<{ default: ImageMetadata }>(
-  '../assets/*-preview.{webp,png,jpg,jpeg}',
-  { eager: true }
-);
-const previews: Record<string, ImageMetadata> = {};
-for (const [path, mod] of Object.entries(previewModules)) {
-  const name = path.split('/').pop()!.replace(/-preview\.\w+$/, '');
-  previews[name] = mod.default;
-}
 
 const featured = projects.filter((p) => p.featured);
 const others = projects.filter((p) => !p.featured);

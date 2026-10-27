@@ -1,5 +1,6 @@
 ---
 import { Image } from 'astro:assets';
+import { about } from '../data/about';
 import portrait from '../assets/profilepicture.png';
 ---
 <section class="hero" id="top">
@@ -8,9 +9,7 @@ import portrait from '../assets/profilepicture.png';
     <h1>
       Paul <em>Reitmayer</em>
     </h1>
-    <p class="tagline">
-      Elektrotechniker am Erdgasspeicher Bierwang. Software-Engineering als Hobby.
-    </p>
+    <p class="tagline">{about.tagline}</p>
     <a class="btn" href="#projects">Projekte ansehen →</a>
   </div>
   <div class="photo window">

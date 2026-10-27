@@ -1,0 +1,229 @@
+---
+import { Image } from 'astro:assets';
+import portrait from '../../assets/profilepicture.png';
+import { about } from '../../data/about';
+import { projects } from '../../data/projects';
+import { previews } from '../../data/previews';
+import { tools, palette } from '../../data/tools';
+import { workstation, laptop, server } from '../../data/hardware';
+import { bmw, pax, cats } from '../../data/sidefacts';
+import { contacts, contactIcons, emailParts } from '../../data/contact';
+
+const featured = projects.filter((p) => p.featured);
+const others = projects.filter((p) => !p.featured);
+const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
+  (typeof contacts)[number]['kind'],
+  (typeof contacts)[number]
+>;
+---
+<template data-window data-ws="1" data-label="about" data-path="~/über-mich">
+  <span class="path">~/über-mich</span>
+  <h3>{about.name}</h3>
+  <p class="tagline">{about.tagline}</p>
+  {about.paragraphs.map((p) => <p>{p}</p>)}
+</template>
+
+<template data-window data-ws="1" data-label="portrait" data-path="~/über-mich/portrait">
+  <span class="path">~/über-mich/portrait</span>
+  <Image src={portrait} alt="Foto von Paul Reitmayer" width={480} height={480} decoding="async" />
+</template>
+
+{featured.map((p) => (
+  <template data-window data-ws="2" data-label={p.name} data-path={`~/projekte/${p.name}`}>
+    <span class="path">{`~/projekte/${p.name}`}</span>
+    {previews[p.name] && (
+      <div class="visual">
+        <Image
+          src={previews[p.name]}
+          alt={`Vorschau von ${p.name}`}
+          widths={[640, 960]}
+          sizes="(min-width: 900px) 640px, 100vw"
+          decoding="async"
+        />
+      </div>
+    )}
+    <div class="head">
+      <h3>{p.name}</h3>
+      {p.liveUrl && <span class="live">live · {p.liveUrl.replace(/^https?:\/\//, '')}</span>}
+    </div>
+    <p class="desc">{p.description}</p>
+    <ul class="stack">
+      {p.stack.map((s) => <li>{s}</li>)}
+    </ul>
+    <a class="repo" href={p.liveUrl ?? p.repoUrl} target="_blank" rel="noopener noreferrer">{p.repoUrl.replace('https://', '')}</a>
+  </template>
+))}
+
+<template data-window data-ws="2" data-label="projekte" data-path="~/projekte">
+  <span class="path">~/projekte</span>
+  <ul class="plain projects-list">
+    {others.map((p) => (
+      <li>
+        <a href={p.liveUrl ?? p.repoUrl} target="_blank" rel="noopener noreferrer">{p.name}</a>
+        <p class="desc">{p.description}</p>
+        <ul class="stack">
+          {p.stack.map((s) => <li>{s}</li>)}
+        </ul>
+      </li>
+    ))}
+  </ul>
+</template>
+
+<template data-window data-ws="3" data-label="fastfetch" data-path="~/tools/fastfetch">
+  <span class="path">~/tools/fastfetch</span>
+  <div class="fetch">
+    <pre class="logo" aria-hidden="true">  <span class="b">\</span>  \ <span class="b">//</span>
+ ==<span class="b">\</span>__\/ <span class="b">//</span>
+   //   \<span class="b">//</span>
+==//     //==
+ <span class="b">//</span>\___<span class="b">//</span>
+<span class="b">//</span> /\  <span class="b">\</span>==
+  <span class="b">//</span> \  <span class="b">\</span></pre>
+    <div class="info">
+      <p class="host">paul@paul.wtf</p>
+      <dl>
+        {tools.map(({ label, value }) => (
+          <div class="row">
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <div class="palette" aria-hidden="true">
+        {palette.map((c) => <span style={`background:${c}`} />)}
+      </div>
+    </div>
+  </div>
+</template>
+
+<template data-window data-ws="4" data-label="workstation" data-path="~/hardware/workstation">
+  <span class="path">~/hardware/workstation</span>
+  <h3 class="card-title">workstation</h3>
+  {workstation.map((cat) => (
+    <div class="cat">
+      <span class="cat-label">{cat.label}</span>
+      <ul class="plain">
+        {cat.items.map((item) => <li>{item}</li>)}
+      </ul>
+    </div>
+  ))}
+</template>
+
+<template data-window data-ws="4" data-label="laptop" data-path="~/hardware/laptop">
+  <span class="path">~/hardware/laptop</span>
+  <h3 class="card-title">laptop</h3>
+  <p>{laptop}</p>
+</template>
+
+<template data-window data-ws="4" data-label="server" data-path="~/hardware/server">
+  <span class="path">~/hardware/server</span>
+  <h3 class="card-title">server</h3>
+  <p class="muted">{server.hostingNote}</p>
+  <ul class="plain server-list">
+    {server.lines.map((line) => <li>{line}</li>)}
+  </ul>
+</template>
+
+<template data-window data-ws="5" data-label="pax" data-path="~/sidefacts/pax">
+  <span class="path">~/sidefacts/pax</span>
+  <div class="pax">
+    <div class="pax-text">
+      <h3>Pax</h3>
+      <p class="meta">{pax.species} · {pax.pronouns} · {pax.age}</p>
+      <p class="bio">„{pax.description}“</p>
+      <div class="taglist">
+        <span class="tag-label">mag</span>
+        <ul class="tags">
+          {pax.likes.map((l) => <li>{l}</li>)}
+        </ul>
+      </div>
+      <div class="taglist">
+        <span class="tag-label">mag nicht</span>
+        <ul class="tags dislikes">
+          {pax.dislikes.map((l) => <li>{l}</li>)}
+        </ul>
+      </div>
+    </div>
+    <div class="pax-photo">
+      <Image src={pax.image} alt="Fursona Pax (Arctic Fox)" widths={[300, 545]} sizes="220px" />
+    </div>
+  </div>
+</template>
+
+<template data-window data-ws="5" data-label="bmw" data-path="~/sidefacts/auto">
+  <span class="path">~/sidefacts/auto</span>
+  <div class="visual">
+    <Image src={bmw.image} alt="BMW i4 eDrive35" widths={[480, 720]} sizes="480px" />
+  </div>
+  <h3>BMW i4 eDrive35</h3>
+  <p>{bmw.text}</p>
+</template>
+
+<template data-window data-ws="5" data-label="katzen" data-path="~/sidefacts/katzen">
+  <span class="path">~/sidefacts/katzen</span>
+  <div class="row-cats">
+    {cats.map((c) => (
+      <div class="cat">
+        <div class="visual">
+          <Image src={c.image} alt={`Katze ${c.name}`} widths={[240, 480]} sizes="240px" />
+        </div>
+        <h4>{c.name}</h4>
+        <p>{c.personality}</p>
+      </div>
+    ))}
+  </div>
+</template>
+
+<template data-window data-ws="6" data-label="github" data-path="~/kontakt/github">
+  <span class="path">~/kontakt/github</span>
+  <a class="tile" href={contact.github.href} target="_blank" rel="noopener noreferrer">
+    <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+      <path fill="currentColor" d={contactIcons.github}/>
+    </svg>
+    <div>
+      <span class="label">{contact.github.label}</span>
+      <span class="value">{contact.github.value}</span>
+    </div>
+  </a>
+</template>
+
+<template data-window data-ws="6" data-label="discord" data-path="~/kontakt/discord">
+  <span class="path">~/kontakt/discord</span>
+  <button type="button" class="tile discord" data-discord={contact.discord.value}>
+    <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+      <path fill="currentColor" d={contactIcons.discord}/>
+    </svg>
+    <div>
+      <span class="label">{contact.discord.label}</span>
+      <span class="value" role="status" data-discord-text>{contact.discord.value}</span>
+      <span class="sr-only">— Benutzernamen in Zwischenablage kopieren</span>
+    </div>
+  </button>
+</template>
+
+<template data-window data-ws="6" data-label="youtube" data-path="~/kontakt/youtube">
+  <span class="path">~/kontakt/youtube</span>
+  <a class="tile" href={contact.youtube.href} target="_blank" rel="noopener noreferrer">
+    <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+      <path fill="currentColor" d={contactIcons.youtube}/>
+    </svg>
+    <div>
+      <span class="label">{contact.youtube.label}</span>
+      <span class="value">{contact.youtube.value}</span>
+    </div>
+  </a>
+</template>
+
+<template data-window data-ws="6" data-label="email" data-path="~/kontakt/email">
+  <span class="path">~/kontakt/email</span>
+  <button type="button" class="tile email" data-email-user={emailParts.user} data-email-domain={emailParts.domain}>
+    <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+      <path fill="currentColor" d={contactIcons.email}/>
+    </svg>
+    <div>
+      <span class="label">{contact.email.label}</span>
+      <span class="value" data-email-text>{contact.email.value}</span>
+      <span class="sr-only">— in Mail-Client öffnen</span>
+    </div>
+  </button>
+</template>

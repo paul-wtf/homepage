@@ -1,22 +1,26 @@
 ---
+import { contactIcons } from '../data/contact';
+
 interface Props {
   user: string;
   domain: string;
+  label: string;
+  placeholder: string;
 }
-const { user, domain } = Astro.props;
+const { user, domain, label, placeholder } = Astro.props;
 ---
 <button
   type="button"
   class="window window--focusable tile email"
-  data-user={user}
-  data-domain={domain}
+  data-email-user={user}
+  data-email-domain={domain}
 >
   <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
-    <path fill="currentColor" d="M2 4h20a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm10 9.5L2.5 6.7v.05L12 13.5l9.5-6.75V6.7L12 13.5Z"/>
+    <path fill="currentColor" d={contactIcons.email}/>
   </svg>
   <div>
-    <span class="label">Email</span>
-    <span class="value" data-email-text>(Email anzeigen)</span>
+    <span class="label">{label}</span>
+    <span class="value" data-email-text>{placeholder}</span>
     <span class="sr-only">— in Mail-Client öffnen</span>
   </div>
 </button>
@@ -45,17 +49,3 @@ const { user, domain } = Astro.props;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
 </style>
-
-<script>
-  document.querySelectorAll<HTMLButtonElement>('.tile.email').forEach((btn) => {
-    const user = btn.dataset.user;
-    const domain = btn.dataset.domain;
-    if (!user || !domain) return;
-    const email = `${user}@${domain}`;
-    const span = btn.querySelector<HTMLElement>('[data-email-text]');
-    if (span) span.textContent = email;
-    btn.addEventListener('click', () => {
-      window.location.href = `mailto:${email}`;
-    });
-  });
-</script>

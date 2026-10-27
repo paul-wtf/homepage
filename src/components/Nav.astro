@@ -4,6 +4,8 @@
 // der aktive bekommt Teal auf Crust (wsActiveBg/wsActiveFg), die Uhr
 // rechts ist Sky (clockColor). Auf schmalen Screens bleiben nur die
 // Workspace-Nummern übrig.
+import LiveWidgets from './live/LiveWidgets.astro';
+
 const links = [
   { href: '#about',     label: 'über mich' },
   { href: '#projects',  label: 'projekte' },
@@ -26,6 +28,7 @@ const links = [
     ))}
   </ul>
   <div class="right">
+    <LiveWidgets />
     <button
       type="button"
       id="desktop-toggle"
@@ -111,10 +114,14 @@ const links = [
   ul a.empty:not([aria-current]),
   ul a.empty:not([aria-current]) .num { color: var(--overlay0); }
 
+  .brand,
+  ul { flex-shrink: 0; }
+
   .right {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    min-width: 0;
   }
   .toggle {
     display: inline-flex;
@@ -145,10 +152,9 @@ const links = [
     font-variant-numeric: tabular-nums;
   }
 
-  /* 780px statt 760px: bei 761-765px würde „über mich" sonst zweizeilig
-     aus der 44px-Bar ragen. Labels bleiben per sr-only-Clip im
-     Accessibility-Tree — die Nummer allein ist aria-hidden. */
-  @media (max-width: 780px) {
+  /* Labels bleiben per sr-only-Clip im Accessibility-Tree — die Nummer
+     allein ist aria-hidden. */
+  @media (max-width: 1180px) {
     ul a .label {
       position: absolute;
       width: 1px;

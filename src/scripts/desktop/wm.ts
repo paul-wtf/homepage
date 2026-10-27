@@ -2,6 +2,7 @@ import { dwindle, type Rect } from './layout';
 import { initScrollFocus } from '../scroll-focus';
 import { revealEmails } from '../contact-actions';
 import { createTerminal } from './terminal';
+import { latest } from '../live/status';
 
 export interface DesktopApi {
   enter(ws?: number): void;
@@ -303,7 +304,7 @@ export function initDesktop(): DesktopApi {
     const term = createTerminal({
       go,
       close: () => win && closeWindow(win),
-      live: () => null,
+      live: latest,
     });
     openWindow(term);
     win = term.closest<HTMLElement>('.wm-window');

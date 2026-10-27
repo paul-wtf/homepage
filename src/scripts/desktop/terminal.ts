@@ -3,12 +3,8 @@ import { contacts, emailParts } from '../../data/contact';
 import { projects } from '../../data/projects';
 import { pax } from '../../data/sidefacts';
 import { nixLogo, tools } from '../../data/tools';
+import type { Status } from '../live/status';
 
-export interface Status {
-  music: { state: 'playing' | 'recent'; track: string; artist: string } | null;
-  server: { uptime_s: number } | null;
-  weather: { temp_c: number; wind_kmh: number } | null;
-}
 
 export type TermOutput = { text: string; tone?: 'err' | 'ok' }[];
 

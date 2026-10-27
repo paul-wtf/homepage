@@ -294,3 +294,22 @@ test('keybinds window opens once, ? reopens it', async ({ page }) => {
   await expect(page.locator('html')).toHaveClass(/desktop-on/);
   await expect(page.locator('.wm-window[aria-label="Tastenkürzel"]')).toHaveCount(0);
 });
+
+test('a new window leaves fullscreen and stays visible', async ({ page }) => {
+  await markKeybindsSeen(page);
+  await page.goto('/');
+  await enter(page);
+  await page.keyboard.press('f');
+  await expect(page.locator('.wm-window.is-full')).toHaveCount(1);
+
+  await page.keyboard.press('Enter');
+  const term = page.locator('.wm-window[aria-label="Terminal"]');
+  await expect(term).toHaveCount(1);
+  await expect(page.locator('.wm-window.is-full')).toHaveCount(0);
+  await expect(term).toHaveClass(/is-focus/);
+  const top = await term.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.closest('.wm-window') === el;
+  });
+  expect(top).toBe(true);
+});

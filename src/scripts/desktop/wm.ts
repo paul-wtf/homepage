@@ -286,6 +286,7 @@ export function initDesktop(): DesktopApi {
   function add(el: HTMLElement): void {
     const space = ws(cur);
     if (!space) return;
+    space.full = null;
     space.wins.push(el);
     space.layer.append(el);
     layout(cur);

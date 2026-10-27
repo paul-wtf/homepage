@@ -53,7 +53,7 @@ docker run --rm -p 8080:8080 homepage:dev
 
 ## Status API
 
-`api/` is a small FastAPI service behind `/api/status`, which the live bar in desktop mode polls. It returns the current Last.fm track, server load from Prometheus and the weather from Open-Meteo, each cached for a short time. A source that fails or has no data comes back as `null`.
+`api/` is a small FastAPI service behind `/api/status`, which the live bar polls. It returns the current Last.fm track, server load from Prometheus and the weather from Open-Meteo, each cached for a short time. A source that fails or has no data comes back as `null`.
 
 ```bash
 cd api

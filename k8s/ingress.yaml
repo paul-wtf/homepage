@@ -15,6 +15,13 @@ spec:
     - host: paul.wtf
       http:
         paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: homepage-api
+                port:
+                  name: http
           - path: /
             pathType: Prefix
             backend:

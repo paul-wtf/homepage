@@ -51,6 +51,34 @@ docker build -t homepage:dev .
 docker run --rm -p 8080:8080 homepage:dev
 ```
 
+## Status API
+
+`api/` is a small FastAPI service behind `/api/status`, which the live bar in desktop mode polls. It returns the current Last.fm track, server load from Prometheus and the weather from Open-Meteo, each cached for a short time. A source that fails or has no data comes back as `null`.
+
+```bash
+cd api
+uv sync
+uv run uvicorn homepage_api.main:app --reload --port 8080
+uv run pytest
+uv run ruff check
+```
+
+`GET /api/healthz` returns `{"ok": true}`. Configuration comes from environment variables:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `LASTFM_API_KEY` | unset | Last.fm API key. Without it `music` is `null`. |
+| `LASTFM_USER` | `SpotifyNutzeer` | Last.fm user whose tracks are shown. |
+| `PROMETHEUS_URL` | `http://monitoring-kube-prometheus-prometheus.monitoring:9090` | Prometheus base URL for the server load. |
+| `WEATHER_LAT`, `WEATHER_LON` | coordinates of Bierwang | Location for the weather. |
+
+Container:
+
+```bash
+podman build -t homepage-api:dev api
+podman run --rm -p 8080:8080 homepage-api:dev
+```
+
 ## Release
 
 Tagged releases push to GHCR via GitHub Actions:
@@ -60,8 +88,8 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Image lands at `ghcr.io/spotifynutzeer/homepage:v0.1.0`. Update `k8s/deployment.yaml` (and the FluxCD-managed manifests) to point at the new tag.
+The same tag builds two images: `ghcr.io/spotifynutzeer/homepage:v0.1.0` for the site and `ghcr.io/paul-wtf/homepage-api:v0.1.0` for the API. Update the image tags in `k8s/deployment.yaml` and `k8s/api-deployment.yaml` (and the FluxCD-managed manifests) in the release commit, then tag that commit. A new GHCR package starts private; make it public after the first push so the cluster can pull it.
 
 ## Deploy
 
-Apply manifests in `k8s/` to the cluster. In production these are reconciled by FluxCD from `paulwtf-infra/fluxcd` (`apps/homepage/`), not applied by hand.
+Apply manifests in `k8s/` to the cluster. The API reads `LASTFM_API_KEY` from the secret `homepage-api-credentials`; the reference is optional, so a missing secret only leaves `music` empty. In production these are reconciled by FluxCD from `paulwtf-infra/fluxcd` (`apps/homepage/`), not applied by hand.

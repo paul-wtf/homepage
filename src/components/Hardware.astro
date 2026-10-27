@@ -1,8 +1,8 @@
 ---
 import { workstation, laptop, server } from '../data/hardware';
 ---
-<section id="hardware" class="hardware section-shell" data-reveal>
-  <h2 class="section-title">Hardware</h2>
+<section id="hardware" data-ws="4" class="hardware section-shell" data-reveal>
+  <h2 class="section-title"><span class="ws" aria-hidden="true">4</span>Hardware</h2>
 
   <div class="grid">
     <article class="window card workstation">
@@ -50,7 +50,7 @@ import { workstation, laptop, server } from '../data/hardware';
   .cat-label {
     display: inline-block; font-size: 0.8rem;
     text-transform: lowercase;
-    color: var(--teal); margin-bottom: 0.35rem;
+    color: var(--overlay2); margin-bottom: 0.35rem;
   }
   .cat ul, .server-list {
     list-style: none; margin: 0; padding: 0;

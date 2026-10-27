@@ -2,10 +2,11 @@
 import { Image } from 'astro:assets';
 import { bmw, pax, cats } from '../data/sidefacts';
 ---
-<section id="sidefacts" class="sidefacts section-shell" data-reveal>
+<section id="sidefacts" data-ws="5" class="sidefacts section-shell" data-reveal>
   <!-- Der lange Titel würde auf Phones zweizeilig umbrechen und die
        gestrichelte Linie auf 0px kollabieren — Kurzform unter 600px. -->
   <h2 class="section-title">
+    <span class="ws" aria-hidden="true">5</span>
     <span class="t-long">Wenn ich nicht vor dem Bildschirm sitze</span>
     <span class="t-short">Sidefacts</span>
   </h2>
@@ -113,7 +114,7 @@ import { bmw, pax, cats } from '../data/sidefacts';
   .tag-label {
     display: block; font-size: 0.78rem;
     text-transform: lowercase;
-    color: var(--teal); margin-bottom: 0.3rem;
+    color: var(--overlay2); margin-bottom: 0.3rem;
   }
   .tags {
     list-style: none; margin: 0; padding: 0;

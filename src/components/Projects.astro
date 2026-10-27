@@ -19,8 +19,8 @@ for (const [path, mod] of Object.entries(previewModules)) {
 const featured = projects.filter((p) => p.featured);
 const others = projects.filter((p) => !p.featured);
 ---
-<section id="projects" class="projects section-shell" data-reveal>
-  <h2 class="section-title">Projekte</h2>
+<section id="projects" data-ws="2" class="projects section-shell" data-reveal>
+  <h2 class="section-title"><span class="ws" aria-hidden="true">2</span>Projekte</h2>
 
   {featured.map((p) => <ProjectCard project={p} preview={previews[p.name]} />)}
 

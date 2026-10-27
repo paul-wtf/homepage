@@ -13,9 +13,7 @@ import portrait from '../assets/profilepicture.png';
     </p>
     <a class="btn" href="#projects">Projekte ansehen →</a>
   </div>
-  <!-- Das eine fokussierte Fenster auf dem Desktop: solider Teal-Border
-       wie hyprlands col.active_border im Zen-Modus. -->
-  <div class="photo">
+  <div class="photo window">
     <Image
       src={portrait}
       alt="Foto von Paul Reitmayer"
@@ -81,8 +79,6 @@ import portrait from '../assets/profilepicture.png';
     max-width: 320px;
     justify-self: end;
     overflow: hidden;
-    border-radius: var(--r-card);
-    box-shadow: 0 0 0 2px var(--teal), var(--card-shadow);
   }
   .photo :global(img) {
     width: 100%;

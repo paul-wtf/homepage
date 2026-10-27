@@ -121,11 +121,16 @@ body::before {
   background: var(--base);
   border-radius: var(--r-card);
   box-shadow: var(--card-shadow);
+  transition: box-shadow var(--dur) var(--ease-jelly);
+}
+.window.is-focus {
+  box-shadow: 0 0 0 2px var(--teal), var(--card-shadow);
 }
 
-.window--focusable {
-  transition: box-shadow var(--dur-fast) var(--ease);
+@media (prefers-reduced-motion: reduce) {
+  .window { transition: none; }
 }
+
 .window--focusable:hover,
 .window--focusable:focus-visible {
   box-shadow: 0 0 0 2px var(--teal), var(--card-shadow);

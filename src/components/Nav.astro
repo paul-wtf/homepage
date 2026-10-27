@@ -164,6 +164,7 @@ const links = [
     ) {
       current = sections[sections.length - 1].id;
     }
+    for (const s of sections) s.classList.toggle('is-current', s.id === current);
     for (const a of navLinks) {
       if (a.dataset.section === current) a.setAttribute('aria-current', 'true');
       else a.removeAttribute('aria-current');

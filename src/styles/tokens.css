@@ -125,22 +125,26 @@ body::before {
   background: var(--base);
   border-radius: var(--r-card);
   box-shadow: var(--card-shadow);
-  transition: box-shadow var(--dur) var(--ease-jelly);
+}
+.window--focusable {
+  transition: box-shadow var(--dur-fast) var(--ease);
 }
 .window.is-focus {
   box-shadow: 0 0 0 2px var(--teal), var(--card-shadow);
+  transition: box-shadow var(--dur) var(--ease-jelly);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .window { transition: none; }
-}
-
 .window--focusable:hover,
 .window--focusable:focus-visible {
   box-shadow: 0 0 0 2px var(--teal), var(--card-shadow);
 }
 .window--focusable:focus-visible {
   outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .window,
+  .window--focusable,
+  .window.is-focus { transition: none; }
 }
 
 /* Section-Helfer */
@@ -156,8 +160,7 @@ section {
   padding: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 4vw, 2rem);
 }
 
-/* Section-Titel wie die Kommentar-Header in Theme.qml, vorn mit der
-   Workspace-Nummer als Chip. */
+/* Section-Titel wie die Kommentar-Header in Theme.qml. */
 .section-title {
   display: flex;
   align-items: center;

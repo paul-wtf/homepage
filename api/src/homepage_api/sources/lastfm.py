@@ -12,18 +12,23 @@ RECENT_WINDOW = timedelta(hours=6)
 async def fetch_music(client: httpx.AsyncClient, settings: Settings, now: datetime) -> Music | None:
     if not settings.lastfm_api_key:
         return None
-    resp = await client.get(
-        API_URL,
-        params={
-            "method": "user.getrecenttracks",
-            "user": settings.lastfm_user,
-            "api_key": settings.lastfm_api_key,
-            "format": "json",
-            "limit": "1",
-        },
-    )
-    resp.raise_for_status()
-    data = resp.json()
+    try:
+        resp = await client.get(
+            API_URL,
+            params={
+                "method": "user.getrecenttracks",
+                "user": settings.lastfm_user,
+                "api_key": settings.lastfm_api_key,
+                "format": "json",
+                "limit": "1",
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except httpx.HTTPStatusError as exc:
+        raise RuntimeError(f"Last.fm HTTP {exc.response.status_code}") from None
+    except (httpx.HTTPError, ValueError) as exc:
+        raise RuntimeError(f"Last.fm request failed: {type(exc).__name__}") from None
     if "error" in data:
         raise RuntimeError(f"Last.fm error {data['error']}: {data.get('message', '')}")
     return _parse_music(data, now)

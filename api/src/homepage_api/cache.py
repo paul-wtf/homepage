@@ -20,11 +20,14 @@ class CachedSource[T]:
         self._name = name
         self._value: T | None = None
         self._fetched_at: float | None = None
+        self._retry_at: float | None = None
         self._inflight: asyncio.Task[T | None] | None = None
 
     async def get(self) -> T | None:
         if self._fetched_at is not None and self._clock() - self._fetched_at < self._ttl:
             return self._value
+        if self._retry_at is not None and self._clock() < self._retry_at:
+            return self._stale_value()
         if self._inflight is None:
             self._inflight = asyncio.ensure_future(self._refresh())
         return await asyncio.shield(self._inflight)
@@ -35,7 +38,9 @@ class CachedSource[T]:
                 value = await self._fetch()
             except Exception as exc:
                 logger.warning("%s fetch failed: %s: %s", self._name, type(exc).__name__, exc)
+                self._retry_at = self._clock() + self._ttl
                 return self._stale_value()
+            self._retry_at = None
             self._value = value
             self._fetched_at = self._clock()
             return value

@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime, timedelta
 
 import httpx
@@ -74,3 +75,23 @@ async def test_healthz(client):
     resp = await client.get("/api/healthz")
     assert resp.status_code == 200
     assert resp.json() == {"ok": True}
+
+
+async def test_api_key_never_appears_in_logs_on_http_error(client, respx_mock, caplog, settings):
+    respx_mock.get(API).mock(return_value=httpx.Response(500))
+    with caplog.at_level(logging.DEBUG):
+        resp = await client.get("/api/status")
+    assert resp.status_code == 200
+    assert any(r.levelname == "WARNING" for r in caplog.records)
+    assert settings.lastfm_api_key not in caplog.text
+    for record in caplog.records:
+        assert settings.lastfm_api_key not in record.getMessage()
+
+
+async def test_api_key_never_appears_in_logs_on_timeout(client, respx_mock, caplog, settings):
+    respx_mock.get(API).mock(side_effect=httpx.ConnectTimeout("slow"))
+    with caplog.at_level(logging.DEBUG):
+        resp = await client.get("/api/status")
+    assert resp.status_code == 200
+    assert any(r.levelname == "WARNING" for r in caplog.records)
+    assert settings.lastfm_api_key not in caplog.text

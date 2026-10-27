@@ -127,9 +127,11 @@ async def test_lastfm_upstream_error_raises(respx_mock, settings):
     mock(respx_mock, {}, status=500)
     try:
         await run(settings)
-    except httpx.HTTPStatusError:
+    except RuntimeError as exc:
+        assert "500" in str(exc)
+        assert settings.lastfm_api_key not in str(exc)
         return
-    raise AssertionError("expected HTTPStatusError")
+    raise AssertionError("expected RuntimeError")
 
 
 async def test_lastfm_error_payload_raises(respx_mock, settings):

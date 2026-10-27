@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
@@ -14,6 +15,7 @@ from homepage_api.sources.lastfm import fetch_music
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings()
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:

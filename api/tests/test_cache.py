@@ -64,8 +64,8 @@ async def test_cache_recovers_after_failure():
     clock.now = 25
     assert await source.get() is None
     fail = False
-    clock.now = 26
-    assert await source.get() == 26
+    clock.now = 35
+    assert await source.get() == 35
 
 
 async def test_cache_single_flight():
@@ -141,3 +141,36 @@ async def test_cache_failure_is_logged_at_warning(caplog):
     assert len(records) == 1
     assert "music" in records[0].getMessage()
     assert records[0].exc_info is None
+
+
+async def test_cache_backs_off_after_failure():
+    clock = Clock()
+    calls = 0
+    fail = False
+
+    async def fetch():
+        nonlocal calls
+        calls += 1
+        if fail:
+            raise RuntimeError("down")
+        return "good"
+
+    source = CachedSource(fetch, ttl=10, clock=clock)
+    assert await source.get() == "good"
+    fail = True
+    clock.now = 11
+    assert await source.get() == "good"
+    assert calls == 2
+    clock.now = 15
+    assert await source.get() == "good"
+    assert calls == 2
+    clock.now = 21
+    assert await source.get() is None
+    assert calls == 3
+    clock.now = 25
+    assert await source.get() is None
+    assert calls == 3
+    fail = False
+    clock.now = 32
+    assert await source.get() == "good"
+    assert calls == 4

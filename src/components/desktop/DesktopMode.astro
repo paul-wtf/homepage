@@ -1,0 +1,368 @@
+---
+const keys = [
+  { keys: ['1', '–', '6'], action: 'Workspace wechseln' },
+  { keys: ['h', 'j', 'k', 'l'], action: 'Fokus bewegen (auch Pfeiltasten)' },
+  { keys: ['Enter'], action: 'Terminal öffnen' },
+  { keys: ['Q'], action: 'Fenster schließen' },
+  { keys: ['F'], action: 'Vollbild an/aus' },
+  { keys: ['?'], action: 'diese Übersicht' },
+  { keys: ['Esc', 'D'], action: 'zurück zur Seite' },
+];
+---
+<div class="wm" data-wm></div>
+
+<template data-keybinds data-label="keybinds" data-path="~/keybinds">
+  <span class="path">~/keybinds</span>
+  <h3>Tastenkürzel</h3>
+  <dl class="keys">
+    {keys.map((k) => (
+      <div class="row">
+        <dt>{k.keys.map((key) => (key === '–' ? <span>–</span> : <kbd>{key}</kbd>))}</dt>
+        <dd>{k.action}</dd>
+      </div>
+    ))}
+  </dl>
+  <p class="muted">Der Fokus folgt der Maus.</p>
+</template>
+
+<style is:global>
+  html.desktop-on { overflow: hidden; }
+
+  main {
+    transition:
+      opacity var(--dur-fast) var(--ease),
+      transform var(--dur) var(--ease-out);
+  }
+  html.desktop-on main {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+
+  .wm {
+    position: fixed;
+    top: var(--viewport-top);
+    right: var(--frame);
+    bottom: var(--frame);
+    left: var(--frame);
+    z-index: 50;
+    overflow: hidden;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  html.desktop-on .wm,
+  .wm.is-leaving { visibility: visible; }
+  html.desktop-on .wm { pointer-events: auto; }
+
+  .wm-layer {
+    position: absolute;
+    inset: 0;
+    transition: transform var(--dur-slide) var(--ease-out);
+  }
+  .wm-layer.is-parked { visibility: hidden; }
+
+  .wm-window {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    padding: 1.15rem 1.3rem;
+    background: var(--base);
+    border-radius: var(--r-window);
+    box-shadow: var(--card-shadow);
+    container-type: inline-size;
+    scrollbar-color: var(--surface1) transparent;
+    scrollbar-width: thin;
+    transition:
+      left var(--dur) var(--ease-jelly),
+      top var(--dur) var(--ease-jelly),
+      width var(--dur) var(--ease-jelly),
+      height var(--dur) var(--ease-jelly),
+      box-shadow var(--dur-fast) var(--ease),
+      opacity var(--dur-fast) var(--ease),
+      transform var(--dur) var(--ease-jelly);
+  }
+  .wm-window > * { flex-shrink: 0; }
+  .wm-window:focus-visible { outline: none; }
+  .wm-window.is-pre { opacity: 0; transform: scale(0.8); }
+  .wm-window.is-closing {
+    opacity: 0;
+    transform: scale(0.85);
+    pointer-events: none;
+    transition-duration: 180ms;
+  }
+  .wm-window.is-focus {
+    z-index: 2;
+    box-shadow: 0 0 0 2px var(--teal), var(--card-shadow);
+  }
+  .wm-window.is-full { z-index: 5; }
+
+  @media (prefers-reduced-motion: reduce) {
+    main,
+    .wm-layer,
+    .wm-window { transition: none; }
+  }
+
+  .wm-window .path {
+    display: block;
+    margin-bottom: 0.7rem;
+    font-size: 0.72rem;
+    color: var(--overlay2);
+  }
+  .wm-window h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+  .wm-window h4 { font-size: 0.92rem; margin: 0.5rem 0 0.2rem; }
+  .wm-window p {
+    margin: 0 0 0.75rem;
+    color: var(--subtext0);
+    font-size: 0.88rem;
+    line-height: 1.65;
+  }
+  .wm-window p:last-child { margin-bottom: 0; }
+  .wm-window a { color: var(--text); }
+  .wm-window .muted {
+    font-size: 0.75rem;
+    text-transform: lowercase;
+    color: var(--overlay2);
+  }
+  .wm-window ul.plain {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    color: var(--subtext0);
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+
+  .wm-window h3:has(+ .tagline) {
+    font-size: clamp(1.4rem, 4cqi, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.045em;
+  }
+  .wm-window .tagline {
+    margin-bottom: 1.1rem;
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+
+  .wm-window > img {
+    flex: 1 1 0;
+    min-height: 0;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: var(--r-nest);
+  }
+
+  .wm-window .visual {
+    margin-bottom: 0.9rem;
+    border-radius: var(--r-nest);
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    background: var(--crust);
+  }
+  .wm-window .visual img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .wm-window .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.3rem 1rem;
+    margin-bottom: 0.4rem;
+  }
+  .wm-window .head h3 { margin: 0; font-size: 1.3rem; }
+  .wm-window .live {
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--r-chip);
+    background: var(--surface0);
+    color: var(--green);
+    font-size: 0.7rem;
+    white-space: nowrap;
+  }
+  .wm-window .desc { margin-bottom: 0.6rem; }
+  .wm-window .stack,
+  .wm-window .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin: 0 0 0.7rem;
+    padding: 0;
+    list-style: none;
+  }
+  .wm-window .stack li,
+  .wm-window .tags li {
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--r-chip);
+    background: var(--surface0);
+    color: var(--subtext1);
+    font-size: 0.72rem;
+  }
+  .wm-window .tags li { color: var(--green); }
+  .wm-window .tags.dislikes li { color: var(--red); }
+  .wm-window .repo {
+    color: var(--overlay2);
+    font-size: 0.76rem;
+    overflow-wrap: anywhere;
+    text-decoration: none;
+  }
+  .wm-window .repo:hover { color: var(--text); }
+  .wm-window .projects-list > li { margin-bottom: 1rem; }
+  .wm-window .projects-list > li:last-child { margin-bottom: 0; }
+  .wm-window .projects-list > li > a {
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .wm-window .projects-list .desc { margin: 0.15rem 0 0.4rem; }
+  .wm-window .projects-list .stack { margin: 0; }
+
+  .wm-window .fetch {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem 2rem;
+    align-items: start;
+  }
+  .wm-window .logo {
+    margin: 0;
+    color: var(--teal);
+    font-weight: 700;
+    font-size: 0.9rem;
+    line-height: 1.25;
+    white-space: pre;
+  }
+  .wm-window .logo .b { color: var(--sky); }
+  .wm-window .fetch .info { min-width: 0; }
+  .wm-window .fetch .host {
+    margin: 0 0 0.35rem;
+    color: var(--text);
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .wm-window .fetch dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.3rem 1.5rem;
+    margin: 0.75rem 0 1rem;
+  }
+  .wm-window .fetch .row { display: contents; }
+  .wm-window .fetch dt { color: var(--overlay2); font-size: 0.86rem; text-transform: lowercase; }
+  .wm-window .fetch dd { margin: 0; color: var(--text); font-size: 0.86rem; }
+  .wm-window .palette { display: flex; gap: 0.4rem; }
+  .wm-window .palette span { width: 1rem; height: 1rem; border-radius: 4px; }
+  @container (max-width: 520px) {
+    .wm-window .fetch { grid-template-columns: 1fr; }
+  }
+
+  .wm-window .card-title { margin-bottom: 0.9rem; }
+  .wm-window .cat { margin-bottom: 0.9rem; }
+  .wm-window .cat:last-child { margin-bottom: 0; }
+  .wm-window .cat-label,
+  .wm-window .tag-label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.78rem;
+    text-transform: lowercase;
+    color: var(--overlay2);
+  }
+
+  .wm-window .pax {
+    display: grid;
+    grid-template-columns: 1fr minmax(110px, 34%);
+    gap: 1rem;
+    align-items: start;
+  }
+  .wm-window .pax > * { min-width: 0; }
+  .wm-window .pax .meta {
+    margin-bottom: 0.8rem;
+    font-size: 0.78rem;
+    text-transform: lowercase;
+    color: var(--overlay2);
+  }
+  .wm-window .pax .bio { font-style: italic; }
+  .wm-window .pax .tags { margin-bottom: 0.6rem; }
+  .wm-window .pax-photo img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--r-nest);
+    background: var(--crust);
+  }
+
+  .wm-window .row-cats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+  .wm-window .row-cats .cat { margin: 0; min-width: 0; }
+  .wm-window .row-cats .visual { aspect-ratio: 4 / 3; margin-bottom: 0.5rem; }
+  .wm-window .row-cats p { font-size: 0.8rem; line-height: 1.5; }
+
+  .wm-window .tile {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .wm-window .tile svg { flex-shrink: 0; color: var(--teal); }
+  .wm-window .tile > div { min-width: 0; }
+  .wm-window .tile .label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: lowercase;
+    color: var(--overlay2);
+  }
+  .wm-window .tile .value {
+    display: block;
+    overflow: hidden;
+    color: var(--text);
+    font-size: 0.92rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .wm-window .discord.copied .value { color: var(--green); }
+
+  .wm-window .keys {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.45rem 1.25rem;
+    margin: 0.4rem 0 1rem;
+  }
+  .wm-window .keys .row { display: contents; }
+  .wm-window .keys dt {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--overlay2);
+  }
+  .wm-window .keys dd {
+    margin: 0;
+    color: var(--subtext0);
+    font-size: 0.86rem;
+  }
+  .wm-window kbd {
+    min-width: 1.6em;
+    padding: 0.05rem 0.4rem;
+    border-radius: 6px;
+    background: var(--surface0);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+</style>
+
+<script>
+  import { initDesktop } from '../../scripts/desktop/wm';
+  initDesktop();
+</script>

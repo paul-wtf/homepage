@@ -25,7 +25,17 @@ const links = [
       </li>
     ))}
   </ul>
-  <span class="clock" data-clock aria-hidden="true">--:--</span>
+  <div class="right">
+    <button
+      type="button"
+      id="desktop-toggle"
+      class="toggle"
+      aria-pressed="false"
+      title="Desktop-Modus (D)"
+      hidden
+    ><span aria-hidden="true">⊞</span> desktop</button>
+    <span class="clock" data-clock aria-hidden="true">--:--</span>
+  </div>
 </nav>
 
 <style is:global>
@@ -98,6 +108,37 @@ const links = [
   }
   ul a[aria-current='true'] .num { color: var(--crust); }
 
+  ul a.empty:not([aria-current]),
+  ul a.empty:not([aria-current]) .num { color: var(--overlay0); }
+
+  .right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.28rem 0.6rem;
+    border: 0;
+    border-radius: var(--r-chip);
+    background: transparent;
+    color: var(--subtext0);
+    font: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition:
+      color var(--dur-fast) var(--ease),
+      background var(--dur-fast) var(--ease);
+  }
+  .toggle[hidden] { display: none; }
+  .toggle:hover,
+  .toggle[aria-pressed='true'] {
+    color: var(--text);
+    background: var(--surface0);
+  }
+
   .clock {
     font-size: 0.82rem;
     color: var(--sky);
@@ -151,6 +192,7 @@ const links = [
   let raf = 0;
   const updateActive = () => {
     raf = 0;
+    if (document.documentElement.classList.contains('desktop-on')) return;
     const probe = window.innerHeight * 0.35;
     let current: string | null = null;
     for (const s of sections) {

@@ -83,9 +83,6 @@ import '../styles/tokens.css';
       }
     </style>
     <script>
-      import { initScrollFocus } from '../scripts/scroll-focus';
-      initScrollFocus();
-
       const reveals = document.querySelectorAll<HTMLElement>('[data-reveal]');
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (reduced || !('IntersectionObserver' in window)) {

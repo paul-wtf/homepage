@@ -7,7 +7,11 @@ function reveal(btn: HTMLElement): string | null {
   return email;
 }
 
-document.querySelectorAll<HTMLElement>('[data-email-user]').forEach(reveal);
+export function revealEmails(root: ParentNode = document): void {
+  root.querySelectorAll<HTMLElement>('[data-email-user]').forEach(reveal);
+}
+
+revealEmails();
 
 document.addEventListener('click', async (event) => {
   const target = event.target as Element | null;

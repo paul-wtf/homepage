@@ -23,7 +23,7 @@
     aria-controls="live-popout"
     hidden
   ><span class="glyph" data-glyph aria-hidden="true"></span><span data-text></span></button>
-  <div id="live-popout" class="popout" data-live-popout role="dialog" hidden></div>
+  <div id="live-popout" class="popout" data-live-popout role="region" hidden></div>
 </div>
 
 <style>
@@ -336,6 +336,7 @@
   }
 
   let open: Name | null = null;
+  let shown = '';
 
   function place(btn: HTMLElement): void {
     if (!pop) return;
@@ -406,8 +407,6 @@
     if (btn && btn.getClientRects().length) place(btn);
     else close(false);
   });
-
-  let shown = '';
 
   subscribe((s) => {
     renderWidgets(s);

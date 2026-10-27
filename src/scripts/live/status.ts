@@ -51,6 +51,7 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const isStr = (v: unknown): v is string => typeof v === 'string';
 const strOrNull = (v: unknown): string | null => (isStr(v) && v ? v : null);
+const httpsOrNull = (v: unknown): string | null => (isStr(v) && v.startsWith('https://') ? v : null);
 
 function music(v: unknown): Music | null {
   if (!isObj(v) || (v.state !== 'playing' && v.state !== 'recent')) return null;
@@ -60,8 +61,8 @@ function music(v: unknown): Music | null {
     track: v.track,
     artist: v.artist,
     album: strOrNull(v.album),
-    image: strOrNull(v.image),
-    url: strOrNull(v.url),
+    image: httpsOrNull(v.image),
+    url: httpsOrNull(v.url),
     played_at: strOrNull(v.played_at),
   };
 }
@@ -133,9 +134,10 @@ function onVisibility(): void {
     return;
   }
   if (inFlight) return;
+  const wait = failed ? BACKOFF : INTERVAL;
   const elapsed = Date.now() - lastPoll;
-  if (elapsed >= INTERVAL) void poll();
-  else schedule((failed ? BACKOFF : INTERVAL) - elapsed);
+  if (elapsed >= wait) void poll();
+  else schedule(wait - elapsed);
 }
 
 export function startPolling(): void {

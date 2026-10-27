@@ -5,7 +5,6 @@ import { pax } from '../../data/sidefacts';
 import { nixLogo, tools } from '../../data/tools';
 import type { Status } from '../live/status';
 
-
 export type TermOutput = { text: string; tone?: 'err' | 'ok' }[];
 
 export interface TerminalContext {

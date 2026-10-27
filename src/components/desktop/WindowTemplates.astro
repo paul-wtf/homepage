@@ -5,6 +5,7 @@ import { about } from '../../data/about';
 import { projects } from '../../data/projects';
 import { previews } from '../../data/previews';
 import { tools, palette } from '../../data/tools';
+import NixLogo from '../NixLogo.astro';
 import { workstation, laptop, server } from '../../data/hardware';
 import { bmw, pax, cats } from '../../data/sidefacts';
 import { contacts, contactIcons, emailParts } from '../../data/contact';
@@ -72,13 +73,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
 <template data-window data-ws="3" data-label="Systeminfo" data-path="~/tools/fastfetch">
   <span class="path">~/tools/fastfetch</span>
   <div class="fetch">
-    <pre class="logo" aria-hidden="true">  <span class="b">\</span>  \ <span class="b">//</span>
- ==<span class="b">\</span>__\/ <span class="b">//</span>
-   //   \<span class="b">//</span>
-==//     //==
- <span class="b">//</span>\___<span class="b">//</span>
-<span class="b">//</span> /\  <span class="b">\</span>==
-  <span class="b">//</span> \  <span class="b">\</span></pre>
+    <NixLogo />
     <div class="info">
       <p class="host">paul@paul.wtf</p>
       <dl>

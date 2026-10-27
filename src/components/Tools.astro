@@ -1,17 +1,12 @@
 ---
 import { tools, palette } from '../data/tools';
+import NixLogo from './NixLogo.astro';
 ---
 <section id="tools" data-ws="3" class="tools section-shell" data-reveal>
   <h2 class="section-title"><span class="ws" aria-hidden="true">3</span>Tools</h2>
   <!-- Fastfetch-Fenster: user@host, Trennlinie, key/value, Palette. -->
   <div class="window fetch">
-    <pre class="logo" aria-hidden="true">  <span class="b">\</span>  \ <span class="b">//</span>
- ==<span class="b">\</span>__\/ <span class="b">//</span>
-   //   \<span class="b">//</span>
-==//     //==
- <span class="b">//</span>\___<span class="b">//</span>
-<span class="b">//</span> /\  <span class="b">\</span>==
-  <span class="b">//</span> \  <span class="b">\</span></pre>
+    <NixLogo />
     <div class="info">
       <p class="host">paul@paul.wtf</p>
       <dl>
@@ -41,7 +36,7 @@ import { tools, palette } from '../data/tools';
     gap: 0 2rem;
     align-items: start;
   }
-  .logo {
+  .fetch :global(.logo) {
     margin: 0;
     color: var(--teal);
     font-weight: 700;
@@ -49,7 +44,7 @@ import { tools, palette } from '../data/tools';
     line-height: 1.25;
     white-space: pre;
   }
-  .logo .b { color: var(--sky); }
+  .fetch :global(.logo .b) { color: var(--sky); }
   .info { min-width: 0; }
   .host {
     margin: 0 0 0.35rem;

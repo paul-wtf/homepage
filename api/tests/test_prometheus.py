@@ -179,8 +179,8 @@ async def test_server_history_drops_non_finite_points(respx_mock, settings):
     assert 6.0 not in server.cpu_history
 
 
-async def test_status_server_null_when_exporter_down(client, respx_mock):
-    respx_mock.get("https://ws.audioscrobbler.com/2.0/").mock(return_value=httpx.Response(500))
+async def test_status_server_null_when_exporter_down(client, respx_mock, sources_down):
+    sources_down("music", "weather")
     respx_mock.get(f"{BASE}/api/v1/query").mock(return_value=httpx.Response(200, json=EMPTY))
     respx_mock.get(f"{BASE}/api/v1/query_range").mock(return_value=httpx.Response(200, json=EMPTY))
     resp = await client.get("/api/status")
@@ -188,16 +188,16 @@ async def test_status_server_null_when_exporter_down(client, respx_mock):
     assert resp.json()["server"] is None
 
 
-async def test_status_returns_server(client, respx_mock):
-    respx_mock.get("https://ws.audioscrobbler.com/2.0/").mock(return_value=httpx.Response(500))
+async def test_status_returns_server(client, respx_mock, sources_down):
+    sources_down("music", "weather")
     wire(respx_mock)
     body = (await client.get("/api/status")).json()
     assert body["server"]["cpu_pct"] == 12.3
     assert len(body["server"]["cpu_history"]) == 30
 
 
-async def test_status_logs_no_url_on_prometheus_failure(client, respx_mock, caplog):
-    respx_mock.get("https://ws.audioscrobbler.com/2.0/").mock(return_value=httpx.Response(500))
+async def test_status_logs_no_url_on_prometheus_failure(client, respx_mock, caplog, sources_down):
+    sources_down("music", "weather")
     respx_mock.get(f"{BASE}/api/v1/query").mock(return_value=httpx.Response(503))
     respx_mock.get(f"{BASE}/api/v1/query_range").mock(return_value=httpx.Response(503))
     with caplog.at_level(logging.DEBUG):

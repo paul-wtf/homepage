@@ -22,8 +22,8 @@ def playing_payload() -> dict:
     }
 
 
-async def test_status_never_500_when_sources_fail(client, respx_mock):
-    respx_mock.get(API).mock(return_value=httpx.Response(500))
+async def test_status_never_500_when_sources_fail(client, sources_down):
+    sources_down("music", "server", "weather")
     resp = await client.get("/api/status")
     assert resp.status_code == 200
     body = resp.json()
@@ -32,14 +32,16 @@ async def test_status_never_500_when_sources_fail(client, respx_mock):
     assert body["weather"] is None
 
 
-async def test_status_never_500_when_upstream_unreachable(client, respx_mock):
+async def test_status_never_500_when_upstream_unreachable(client, respx_mock, sources_down):
+    sources_down("server", "weather")
     respx_mock.get(API).mock(side_effect=httpx.ConnectTimeout("slow"))
     resp = await client.get("/api/status")
     assert resp.status_code == 200
     assert resp.json()["music"] is None
 
 
-async def test_status_returns_music(client, respx_mock):
+async def test_status_returns_music(client, respx_mock, sources_down):
+    sources_down("server", "weather")
     respx_mock.get(API).mock(return_value=httpx.Response(200, json=playing_payload()))
     resp = await client.get("/api/status")
     assert resp.status_code == 200
@@ -55,7 +57,8 @@ async def test_status_returns_music(client, respx_mock):
     }
 
 
-async def test_status_generated_at_is_iso_utc(client, respx_mock):
+async def test_status_generated_at_is_iso_utc(client, respx_mock, sources_down):
+    sources_down("server", "weather")
     respx_mock.get(API).mock(return_value=httpx.Response(500))
     body = (await client.get("/api/status")).json()
     stamp = body["generated_at"]
@@ -65,7 +68,8 @@ async def test_status_generated_at_is_iso_utc(client, respx_mock):
     assert abs(datetime.now(UTC) - parsed) < timedelta(seconds=5)
 
 
-async def test_status_cache_header(client, respx_mock):
+async def test_status_cache_header(client, respx_mock, sources_down):
+    sources_down("server", "weather")
     respx_mock.get(API).mock(return_value=httpx.Response(500))
     resp = await client.get("/api/status")
     assert resp.headers["cache-control"] == "public, max-age=15"
@@ -77,7 +81,10 @@ async def test_healthz(client):
     assert resp.json() == {"ok": True}
 
 
-async def test_api_key_never_appears_in_logs_on_http_error(client, respx_mock, caplog, settings):
+async def test_api_key_never_appears_in_logs_on_http_error(
+    client, respx_mock, caplog, settings, sources_down
+):
+    sources_down("server", "weather")
     respx_mock.get(API).mock(return_value=httpx.Response(500))
     with caplog.at_level(logging.DEBUG):
         resp = await client.get("/api/status")
@@ -88,7 +95,10 @@ async def test_api_key_never_appears_in_logs_on_http_error(client, respx_mock, c
         assert settings.lastfm_api_key not in record.getMessage()
 
 
-async def test_api_key_never_appears_in_logs_on_timeout(client, respx_mock, caplog, settings):
+async def test_api_key_never_appears_in_logs_on_timeout(
+    client, respx_mock, caplog, settings, sources_down
+):
+    sources_down("server", "weather")
     respx_mock.get(API).mock(side_effect=httpx.ConnectTimeout("slow"))
     with caplog.at_level(logging.DEBUG):
         resp = await client.get("/api/status")

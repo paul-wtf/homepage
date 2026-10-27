@@ -83,15 +83,15 @@ async def test_weather_null_field_raises(respx_mock, settings):
         await run(settings)
 
 
-async def test_status_returns_weather(client, respx_mock):
-    respx_mock.get("https://ws.audioscrobbler.com/2.0/").mock(return_value=httpx.Response(500))
+async def test_status_returns_weather(client, respx_mock, sources_down):
+    sources_down("music", "server")
     mock(respx_mock, payload())
     body = (await client.get("/api/status")).json()
     assert body["weather"] == {"temp_c": 7.4, "code": 3, "is_day": True, "wind_kmh": 11.2}
 
 
-async def test_status_weather_null_on_error(client, respx_mock):
-    respx_mock.get("https://ws.audioscrobbler.com/2.0/").mock(return_value=httpx.Response(500))
+async def test_status_weather_null_on_error(client, respx_mock, sources_down):
+    sources_down("music", "server")
     mock(respx_mock, {}, status=500)
     resp = await client.get("/api/status")
     assert resp.status_code == 200

@@ -313,3 +313,21 @@ test('a new window leaves fullscreen and stays visible', async ({ page }) => {
   });
   expect(top).toBe(true);
 });
+
+test('desktop mode works when localStorage throws', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.addInitScript(() => {
+    const fail = () => {
+      throw new DOMException('blocked', 'SecurityError');
+    };
+    Storage.prototype.getItem = fail;
+    Storage.prototype.setItem = fail;
+  });
+  await page.goto('/');
+  await enter(page);
+  await expect(page.locator('.wm-window').first()).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('html')).not.toHaveClass(/desktop-on/);
+  expect(errors).toEqual([]);
+});

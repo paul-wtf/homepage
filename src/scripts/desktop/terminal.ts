@@ -207,6 +207,7 @@ export function createTerminal(ctx: Omit<TerminalContext, 'clear'>): HTMLElement
       input.blur();
       input.closest<HTMLElement>('.wm-window')?.focus({ preventScroll: true });
     } else if (e.key === 'Enter') {
+      if (e.isComposing) return;
       e.preventDefault();
       const line = input.value;
       input.value = '';

@@ -46,9 +46,7 @@ function readStore(key: string): string | null {
 function writeStore(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
-  } catch {
-    // Blocked storage only costs remembering the mode.
-  }
+  } catch {}
 }
 
 function isTyping(el: Element | null): boolean {
@@ -392,6 +390,7 @@ export function initDesktop(): DesktopApi {
     if (isTyping(document.activeElement) || !media.matches) return;
     const k = e.key.toLowerCase();
     if (k === 'd') {
+      if (e.repeat) return;
       if (on) leave();
       else enter();
     } else if (!on) {

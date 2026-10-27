@@ -91,7 +91,7 @@ test.describe('desktop mode', () => {
       }
       expect(overlaps(bs[0], bs[1])).toBe(false);
       await expect(page.locator('.wm-layer[data-ws="1"] .wm-window').first()).toHaveAttribute('role', 'region');
-      await expect(page.locator('.wm-layer[data-ws="1"] .wm-window').first()).toHaveAttribute('aria-label', 'about');
+      await expect(page.locator('.wm-layer[data-ws="1"] .wm-window').first()).toHaveAttribute('aria-label', 'Über mich');
     });
 
     test('number keys switch workspaces', async ({ page }) => {
@@ -159,18 +159,18 @@ test.describe('desktop mode', () => {
       await enter(page);
       await page.keyboard.press('4');
       const focused = page.locator('.wm-layer[data-ws="4"] .wm-window.is-focus');
-      await expect(focused).toHaveAttribute('aria-label', 'workstation');
+      await expect(focused).toHaveAttribute('aria-label', 'Workstation');
       await page.keyboard.press('l');
-      await expect(focused).toHaveAttribute('aria-label', /^(laptop|server)$/);
+      await expect(focused).toHaveAttribute('aria-label', /^(Laptop|Server)$/);
       await expect(focused).toBeFocused();
       await page.keyboard.press('j');
-      await expect(focused).toHaveAttribute('aria-label', 'server');
+      await expect(focused).toHaveAttribute('aria-label', 'Server');
       await page.keyboard.press('k');
-      await expect(focused).toHaveAttribute('aria-label', 'laptop');
+      await expect(focused).toHaveAttribute('aria-label', 'Laptop');
       await page.keyboard.press('h');
-      await expect(focused).toHaveAttribute('aria-label', 'workstation');
+      await expect(focused).toHaveAttribute('aria-label', 'Workstation');
       await page.keyboard.press('ArrowRight');
-      await expect(focused).toHaveAttribute('aria-label', /^(laptop|server)$/);
+      await expect(focused).toHaveAttribute('aria-label', /^(Laptop|Server)$/);
     });
   });
 
@@ -273,7 +273,7 @@ test.describe('desktop mode', () => {
 test('keybinds window opens once, ? reopens it', async ({ page }) => {
   await page.goto('/');
   await enter(page);
-  const kb = page.locator('.wm-layer[data-ws="1"] .wm-window[aria-label="keybinds"]');
+  const kb = page.locator('.wm-layer[data-ws="1"] .wm-window[aria-label="Tastenkürzel"]');
   await expect(kb).toHaveCount(1);
   await expect(kb).toHaveClass(/is-focus/);
   await expect(kb).toContainText('Workspace');
@@ -282,15 +282,15 @@ test('keybinds window opens once, ? reopens it', async ({ page }) => {
   await page.keyboard.press('Escape');
   await enter(page);
   await expect(page.locator('.wm-layer[data-ws="1"] .wm-window')).toHaveCount(2);
-  await expect(page.locator('.wm-window[aria-label="keybinds"]')).toHaveCount(0);
+  await expect(page.locator('.wm-window[aria-label="Tastenkürzel"]')).toHaveCount(0);
 
   await page.keyboard.press('3');
   await page.keyboard.press('Shift+?');
-  await expect(page.locator('.wm-layer[data-ws="3"] .wm-window[aria-label="keybinds"]')).toHaveCount(1);
+  await expect(page.locator('.wm-layer[data-ws="3"] .wm-window[aria-label="Tastenkürzel"]')).toHaveCount(1);
   await page.keyboard.press('?');
-  await expect(page.locator('.wm-window[aria-label="keybinds"]')).toHaveCount(1);
+  await expect(page.locator('.wm-window[aria-label="Tastenkürzel"]')).toHaveCount(1);
 
   await page.reload();
   await expect(page.locator('html')).toHaveClass(/desktop-on/);
-  await expect(page.locator('.wm-window[aria-label="keybinds"]')).toHaveCount(0);
+  await expect(page.locator('.wm-window[aria-label="Tastenkürzel"]')).toHaveCount(0);
 });

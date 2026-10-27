@@ -24,12 +24,12 @@ test('templates are in window order with a path line first', async ({ page }) =>
     })
   );
   expect(info.map((i) => `${i.ws}:${i.label}`)).toEqual([
-    '1:about', '1:portrait',
-    '2:linkhop', '2:tidalwave', '2:projekte',
-    '3:fastfetch',
-    '4:workstation', '4:laptop', '4:server',
-    '5:pax', '5:bmw', '5:katzen',
-    '6:github', '6:discord', '6:youtube', '6:email',
+    '1:Über mich', '1:Porträt',
+    '2:linkhop', '2:tidalwave', '2:Projekte',
+    '3:Systeminfo',
+    '4:Workstation', '4:Laptop', '4:Server',
+    '5:Pax', '5:BMW', '5:Katzen',
+    '6:GitHub', '6:Discord', '6:YouTube', '6:E-Mail',
   ]);
   for (const i of info) {
     expect(i.firstIsPath, `${i.label} starts with .path`).toBe(true);
@@ -41,7 +41,7 @@ test('templates are in window order with a path line first', async ({ page }) =>
 test('about template starts with name and tagline', async ({ page }) => {
   await page.goto('/');
   const text = await page.$eval(
-    'template[data-window][data-label="about"]',
+    'template[data-window][data-label="Über mich"]',
     (t) => (t as HTMLTemplateElement).content.textContent ?? ''
   );
   expect(text).toContain('Paul Reitmayer');

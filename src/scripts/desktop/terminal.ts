@@ -160,7 +160,7 @@ export function run(line: string, ctx: TerminalContext): TermOutput {
 export function createTerminal(ctx: Omit<TerminalContext, 'clear'>): HTMLElement {
   const root = document.createElement('div');
   root.className = 'term';
-  root.dataset.label = 'terminal';
+  root.dataset.label = 'Terminal';
 
   const out = document.createElement('div');
   out.className = 'term-out';

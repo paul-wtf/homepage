@@ -16,14 +16,14 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   (typeof contacts)[number]
 >;
 ---
-<template data-window data-ws="1" data-label="about" data-path="~/über-mich">
+<template data-window data-ws="1" data-label="Über mich" data-path="~/über-mich">
   <span class="path">~/über-mich</span>
   <h3>{about.name}</h3>
   <p class="tagline">{about.tagline}</p>
   {about.paragraphs.map((p) => <p>{p}</p>)}
 </template>
 
-<template data-window data-ws="1" data-label="portrait" data-path="~/über-mich/portrait">
+<template data-window data-ws="1" data-label="Porträt" data-path="~/über-mich/portrait">
   <span class="path">~/über-mich/portrait</span>
   <Image src={portrait} alt="Foto von Paul Reitmayer" width={480} height={480} decoding="async" />
 </template>
@@ -54,7 +54,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </template>
 ))}
 
-<template data-window data-ws="2" data-label="projekte" data-path="~/projekte">
+<template data-window data-ws="2" data-label="Projekte" data-path="~/projekte">
   <span class="path">~/projekte</span>
   <ul class="plain projects-list">
     {others.map((p) => (
@@ -69,7 +69,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </ul>
 </template>
 
-<template data-window data-ws="3" data-label="fastfetch" data-path="~/tools/fastfetch">
+<template data-window data-ws="3" data-label="Systeminfo" data-path="~/tools/fastfetch">
   <span class="path">~/tools/fastfetch</span>
   <div class="fetch">
     <pre class="logo" aria-hidden="true">  <span class="b">\</span>  \ <span class="b">//</span>
@@ -96,7 +96,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </div>
 </template>
 
-<template data-window data-ws="4" data-label="workstation" data-path="~/hardware/workstation">
+<template data-window data-ws="4" data-label="Workstation" data-path="~/hardware/workstation">
   <span class="path">~/hardware/workstation</span>
   <h3 class="card-title">workstation</h3>
   {workstation.map((cat) => (
@@ -109,13 +109,13 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   ))}
 </template>
 
-<template data-window data-ws="4" data-label="laptop" data-path="~/hardware/laptop">
+<template data-window data-ws="4" data-label="Laptop" data-path="~/hardware/laptop">
   <span class="path">~/hardware/laptop</span>
   <h3 class="card-title">laptop</h3>
   <p>{laptop}</p>
 </template>
 
-<template data-window data-ws="4" data-label="server" data-path="~/hardware/server">
+<template data-window data-ws="4" data-label="Server" data-path="~/hardware/server">
   <span class="path">~/hardware/server</span>
   <h3 class="card-title">server</h3>
   <p class="muted">{server.hostingNote}</p>
@@ -124,7 +124,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </ul>
 </template>
 
-<template data-window data-ws="5" data-label="pax" data-path="~/sidefacts/pax">
+<template data-window data-ws="5" data-label="Pax" data-path="~/sidefacts/pax">
   <span class="path">~/sidefacts/pax</span>
   <div class="pax">
     <div class="pax-text">
@@ -150,7 +150,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </div>
 </template>
 
-<template data-window data-ws="5" data-label="bmw" data-path="~/sidefacts/auto">
+<template data-window data-ws="5" data-label="BMW" data-path="~/sidefacts/auto">
   <span class="path">~/sidefacts/auto</span>
   <div class="visual">
     <Image src={bmw.image} alt="BMW i4 eDrive35" widths={[480, 720]} sizes="480px" />
@@ -159,7 +159,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   <p>{bmw.text}</p>
 </template>
 
-<template data-window data-ws="5" data-label="katzen" data-path="~/sidefacts/katzen">
+<template data-window data-ws="5" data-label="Katzen" data-path="~/sidefacts/katzen">
   <span class="path">~/sidefacts/katzen</span>
   <div class="row-cats">
     {cats.map((c) => (
@@ -174,7 +174,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </div>
 </template>
 
-<template data-window data-ws="6" data-label="github" data-path="~/kontakt/github">
+<template data-window data-ws="6" data-label="GitHub" data-path="~/kontakt/github">
   <span class="path">~/kontakt/github</span>
   <a class="tile" href={contact.github.href} target="_blank" rel="noopener noreferrer">
     <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
@@ -187,7 +187,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </a>
 </template>
 
-<template data-window data-ws="6" data-label="discord" data-path="~/kontakt/discord">
+<template data-window data-ws="6" data-label="Discord" data-path="~/kontakt/discord">
   <span class="path">~/kontakt/discord</span>
   <button type="button" class="tile discord" data-discord={contact.discord.value}>
     <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
@@ -201,7 +201,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </button>
 </template>
 
-<template data-window data-ws="6" data-label="youtube" data-path="~/kontakt/youtube">
+<template data-window data-ws="6" data-label="YouTube" data-path="~/kontakt/youtube">
   <span class="path">~/kontakt/youtube</span>
   <a class="tile" href={contact.youtube.href} target="_blank" rel="noopener noreferrer">
     <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
@@ -214,7 +214,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </a>
 </template>
 
-<template data-window data-ws="6" data-label="email" data-path="~/kontakt/email">
+<template data-window data-ws="6" data-label="E-Mail" data-path="~/kontakt/email">
   <span class="path">~/kontakt/email</span>
   <button type="button" class="tile email" data-email-user={emailParts.user} data-email-domain={emailParts.domain}>
     <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">

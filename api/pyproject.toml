@@ -1,0 +1,39 @@
+[project]
+name = "homepage-api"
+version = "0.1.0"
+description = "Live status endpoint for the homepage bar"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.136.*",
+    "uvicorn[standard]==0.44.*",
+    "pydantic-settings==2.13.*",
+    "httpx==0.28.*",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.0.*",
+    "pytest-asyncio==1.3.*",
+    "respx==0.23.*",
+    "ruff==0.15.*",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/homepage_api"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "SIM", "RUF"]

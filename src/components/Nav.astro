@@ -4,6 +4,8 @@
 // der aktive bekommt Teal auf Crust (wsActiveBg/wsActiveFg), die Uhr
 // rechts ist Sky (clockColor). Auf schmalen Screens bleiben nur die
 // Workspace-Nummern übrig.
+import LiveWidgets from './live/LiveWidgets.astro';
+
 const links = [
   { href: '#about',     label: 'über mich' },
   { href: '#projects',  label: 'projekte' },
@@ -25,7 +27,18 @@ const links = [
       </li>
     ))}
   </ul>
-  <span class="clock" data-clock aria-hidden="true">--:--</span>
+  <div class="right">
+    <LiveWidgets />
+    <button
+      type="button"
+      id="desktop-toggle"
+      class="toggle"
+      aria-pressed="false"
+      title="Desktop-Modus (D)"
+      hidden
+    ><span aria-hidden="true">⊞</span> desktop</button>
+    <span class="clock" data-clock aria-hidden="true">--:--</span>
+  </div>
 </nav>
 
 <style is:global>
@@ -98,16 +111,53 @@ const links = [
   }
   ul a[aria-current='true'] .num { color: var(--crust); }
 
+  ul a.empty:not([aria-current]),
+  ul a.empty:not([aria-current]) .num { color: var(--overlay0); }
+
+  .brand,
+  ul { flex-shrink: 0; }
+
+  .right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.28rem 0.6rem;
+    border: 0;
+    border-radius: var(--r-chip);
+    background: transparent;
+    color: var(--subtext0);
+    font: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition:
+      color var(--dur-fast) var(--ease),
+      background var(--dur-fast) var(--ease);
+  }
+  .toggle[hidden] { display: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .toggle { transition: none; }
+  }
+  .toggle:hover,
+  .toggle[aria-pressed='true'] {
+    color: var(--text);
+    background: var(--surface0);
+  }
+
   .clock {
     font-size: 0.82rem;
     color: var(--sky);
     font-variant-numeric: tabular-nums;
   }
 
-  /* 780px statt 760px: bei 761-765px würde „über mich" sonst zweizeilig
-     aus der 44px-Bar ragen. Labels bleiben per sr-only-Clip im
-     Accessibility-Tree — die Nummer allein ist aria-hidden. */
-  @media (max-width: 780px) {
+  /* Labels bleiben per sr-only-Clip im Accessibility-Tree — die Nummer
+     allein ist aria-hidden. */
+  @media (max-width: 1180px) {
     ul a .label {
       position: absolute;
       width: 1px;
@@ -151,6 +201,7 @@ const links = [
   let raf = 0;
   const updateActive = () => {
     raf = 0;
+    if (document.documentElement.classList.contains('desktop-on')) return;
     const probe = window.innerHeight * 0.35;
     let current: string | null = null;
     for (const s of sections) {
@@ -164,6 +215,7 @@ const links = [
     ) {
       current = sections[sections.length - 1].id;
     }
+    for (const s of sections) s.classList.toggle('is-current', s.id === current);
     for (const a of navLinks) {
       if (a.dataset.section === current) a.setAttribute('aria-current', 'true');
       else a.removeAttribute('aria-current');

@@ -1,27 +1,25 @@
 ---
-import { tools } from '../data/tools';
-
-// Die ANSI-Palette, die fastfetch unter den Infos ausgibt — Mocha-Terminalfarben.
-const palette = [
-  '#45475a', '#f38ba8', '#a6e3a1', '#f9e2af',
-  '#89b4fa', '#f5c2e7', '#94e2d5', '#bac2de'
-];
+import { tools, palette } from '../data/tools';
+import NixLogo from './NixLogo.astro';
 ---
-<section id="tools" class="tools section-shell" data-reveal>
-  <h2 class="section-title">Tools</h2>
+<section id="tools" data-ws="3" class="tools section-shell" data-reveal>
+  <h2 class="section-title"><span class="ws" aria-hidden="true">3</span>Tools</h2>
   <!-- Fastfetch-Fenster: user@host, Trennlinie, key/value, Palette. -->
   <div class="window fetch">
-    <p class="host">paul@paul.wtf</p>
-    <dl>
-      {tools.map(({ label, value }) => (
-        <div class="row">
-          <dt>{label}</dt>
-          <dd>{value}</dd>
-        </div>
-      ))}
-    </dl>
-    <div class="palette" aria-hidden="true">
-      {palette.map((c) => <span style={`background:${c}`} />)}
+    <NixLogo />
+    <div class="info">
+      <p class="host">paul@paul.wtf</p>
+      <dl>
+        {tools.map(({ label, value }) => (
+          <div class="row">
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <div class="palette" aria-hidden="true">
+        {palette.map((c) => <span style={`background:${c}`} />)}
+      </div>
     </div>
   </div>
 </section>
@@ -31,12 +29,26 @@ const palette = [
     margin-bottom: 1.5rem;
   }
   .fetch {
-    max-width: 620px;
+    max-width: 820px;
     padding: 1.5rem 1.75rem;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 2rem;
+    align-items: start;
   }
+  .fetch :global(.logo) {
+    margin: 0;
+    color: var(--teal);
+    font-weight: 700;
+    font-size: clamp(0.62rem, 1.45vw, 0.95rem);
+    line-height: 1.25;
+    white-space: pre;
+  }
+  .fetch :global(.logo .b) { color: var(--sky); }
+  .info { min-width: 0; }
   .host {
     margin: 0 0 0.35rem;
-    color: var(--teal);
+    color: var(--text);
     font-weight: 700;
     font-size: 0.95rem;
   }
@@ -55,7 +67,7 @@ const palette = [
   }
   .row { display: contents; }
   dt {
-    color: var(--teal);
+    color: var(--overlay2);
     font-size: 0.88rem;
     text-transform: lowercase;
   }
@@ -72,5 +84,8 @@ const palette = [
     width: 1rem;
     height: 1rem;
     border-radius: 4px;
+  }
+  @media (max-width: 600px) {
+    .fetch { grid-template-columns: 1fr; gap: 1rem; }
   }
 </style>

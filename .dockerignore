@@ -8,3 +8,5 @@ dist
 .idea
 docs
 README.md
+api
+tests

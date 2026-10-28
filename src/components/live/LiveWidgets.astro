@@ -1,0 +1,418 @@
+<div class="live" data-live-root hidden>
+  <button
+    type="button"
+    class="live-w"
+    data-live="music"
+    aria-expanded="false"
+    aria-controls="live-popout"
+    hidden
+  ><span class="note" aria-hidden="true">♪</span><span class="live-text" data-text></span></button>
+  <button
+    type="button"
+    class="live-w"
+    data-live="server"
+    aria-expanded="false"
+    aria-controls="live-popout"
+    hidden
+  ><span class="key" aria-hidden="true">cpu</span><span data-text></span></button>
+  <button
+    type="button"
+    class="live-w"
+    data-live="weather"
+    aria-expanded="false"
+    aria-controls="live-popout"
+    hidden
+  ><span class="glyph" data-glyph aria-hidden="true"></span><span data-text></span></button>
+  <div id="live-popout" class="popout" data-live-popout role="region" hidden></div>
+</div>
+
+<style>
+  .live {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+  .live[hidden] { display: none; }
+
+  .live-w {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex: 0 0 auto;
+    padding: 0.28rem 0.6rem;
+    border: 0;
+    border-radius: var(--r-chip);
+    background: transparent;
+    color: var(--subtext0);
+    font: inherit;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      color var(--dur-fast) var(--ease),
+      background var(--dur-fast) var(--ease);
+  }
+  .live-w[hidden] { display: none; }
+  .live-w:hover,
+  .live-w[aria-expanded='true'] {
+    color: var(--text);
+    background: var(--surface0);
+  }
+
+  .live-w[data-live='music'] {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 22rem;
+  }
+  .live-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .note { color: var(--teal); }
+  .key { color: var(--overlay2); }
+  .glyph,
+  .popout :global(.glyph) { font-variant-emoji: text; }
+
+  .popout {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 1;
+    width: min(20rem, calc(100vw - 16px));
+    padding: 0.9rem 1rem;
+    border-radius: var(--r-card);
+    background: var(--mantle);
+    box-shadow: var(--card-shadow);
+    color: var(--subtext0);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+  .popout[hidden] { display: none; }
+  .popout :global(p) { margin: 0; }
+
+  .popout :global(.pop-music) {
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+  }
+  .popout :global(.pop-music img) {
+    flex: 0 0 auto;
+    width: 72px;
+    height: 72px;
+    border-radius: var(--r-nest);
+    object-fit: cover;
+    background: var(--surface0);
+  }
+  .popout :global(.pop-music > div) { min-width: 0; }
+  .popout :global(.pop-title) {
+    color: var(--text);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+  .popout :global(.pop-music p:not(.pop-title)) { overflow-wrap: anywhere; }
+  .popout :global(.muted) { color: var(--overlay2); }
+  .popout :global(a) {
+    display: inline-block;
+    margin-top: 0.35rem;
+    color: var(--subtext1);
+  }
+  .popout :global(a:hover) { color: var(--text); }
+
+  .popout :global(dl) {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.3rem 1rem;
+    margin: 0;
+  }
+  .popout :global(dt) { color: var(--overlay2); }
+  .popout :global(dd) {
+    margin: 0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .popout :global(.spark) {
+    display: block;
+    width: 100%;
+    height: 32px;
+    margin: 0.2rem 0 0.5rem;
+  }
+
+  .popout :global(.pop-weather) {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+    font-size: 1.4rem;
+  }
+  .popout :global(.pop-weather .cond) {
+    color: var(--subtext0);
+    font-size: 0.82rem;
+  }
+
+  @media (max-width: 960px) {
+    .live-w[data-live='server'],
+    .live-w[data-live='weather'] { display: none; }
+  }
+  @media (max-width: 780px) {
+    .live-text { display: none; }
+    .live-w[data-live='music'] { padding: 0.28rem 0.55rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .live-w { transition: none; }
+  }
+</style>
+
+<script>
+  import { latest, startPolling, subscribe, type Status } from '../../scripts/live/status';
+
+  type Name = 'music' | 'server' | 'weather';
+
+  const root = document.querySelector<HTMLElement>('[data-live-root]');
+  const pop = document.querySelector<HTMLElement>('[data-live-popout]');
+  const widgets = new Map<Name, HTMLButtonElement>();
+  for (const el of document.querySelectorAll<HTMLButtonElement>('button[data-live]')) {
+    widgets.set(el.dataset.live as Name, el);
+  }
+
+  const WMO: [number[], string, string][] = [
+    [[0], '☀︎', 'sonnig'],
+    [[1], '◐', 'überwiegend klar'],
+    [[2], '◐', 'teilweise bewölkt'],
+    [[3], '☁︎', 'bewölkt'],
+    [[45, 48], '≋', 'Nebel'],
+    [[51, 53, 55], '☂︎', 'Nieselregen'],
+    [[56, 57], '☂︎', 'gefrierender Nieselregen'],
+    [[61, 63], '☂︎', 'Regen'],
+    [[65], '☂︎', 'starker Regen'],
+    [[66, 67], '☂︎', 'gefrierender Regen'],
+    [[80, 81, 82], '☂︎', 'Regenschauer'],
+    [[71, 73, 77], '❄︎', 'Schneefall'],
+    [[75], '❄︎', 'starker Schneefall'],
+    [[85, 86], '❄︎', 'Schneeschauer'],
+    [[95], 'ϟ', 'Gewitter'],
+    [[96, 99], 'ϟ', 'Gewitter mit Hagel'],
+  ];
+
+  function condition(code: number, isDay: boolean): { glyph: string; text: string } {
+    if (code === 0 && !isDay) return { glyph: '☾', text: 'klar' };
+    const hit = WMO.find(([codes]) => codes.includes(code));
+    return hit ? { glyph: hit[1], text: hit[2] } : { glyph: '·', text: 'unbekannt' };
+  }
+
+  const pct = (n: number) => `${n.toFixed(1)}%`;
+  const deg = (n: number) => `${Math.round(n)}°`;
+
+  function uptime(s: number): string {
+    const d = Math.floor(s / 86400);
+    if (d > 0) return `${d} ${d === 1 ? 'Tag' : 'Tage'}`;
+    const h = Math.floor(s / 3600);
+    return h > 0 ? `${h} Std.` : `${Math.floor(s / 60)} min`;
+  }
+
+  function ago(iso: string | null): string {
+    const t = iso ? Date.parse(iso) : NaN;
+    if (Number.isNaN(t)) return 'zuletzt';
+    const min = Math.max(1, Math.round((Date.now() - t) / 60_000));
+    return min < 60 ? `zuletzt · vor ${min} min` : `zuletzt · vor ${Math.round(min / 60)} Std.`;
+  }
+
+  function el<K extends keyof HTMLElementTagNameMap>(
+    tag: K,
+    text?: string,
+    cls?: string
+  ): HTMLElementTagNameMap[K] {
+    const e = document.createElement(tag);
+    if (text !== undefined) e.textContent = text;
+    if (cls) e.className = cls;
+    return e;
+  }
+
+  function sparkline(values: number[]): SVGSVGElement | null {
+    if (values.length < 2) return null;
+    const NS = 'http://www.w3.org/2000/svg';
+    const top = Math.max(10, ...values) * 1.15;
+    const step = 100 / (values.length - 1);
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 100 32');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.setAttribute('class', 'spark');
+    svg.setAttribute('aria-hidden', 'true');
+    const line = document.createElementNS(NS, 'polyline');
+    line.setAttribute(
+      'points',
+      values.map((v, i) => `${(i * step).toFixed(2)},${(31 - (v / top) * 30).toFixed(2)}`).join(' ')
+    );
+    line.setAttribute('fill', 'none');
+    line.setAttribute('stroke', 'var(--subtext0)');
+    line.setAttribute('stroke-width', '1.5');
+    line.setAttribute('stroke-linejoin', 'round');
+    line.setAttribute('vector-effect', 'non-scaling-stroke');
+    svg.append(line);
+    return svg;
+  }
+
+  function rows(pairs: [string, string][]): HTMLDListElement {
+    const dl = el('dl');
+    for (const [k, v] of pairs) dl.append(el('dt', k), el('dd', v));
+    return dl;
+  }
+
+  function popContent(name: Name, s: Status): Node | null {
+    if (name === 'music' && s.music) {
+      const m = s.music;
+      const box = el('div', undefined, 'pop-music');
+      if (m.image) {
+        const img = el('img');
+        img.src = m.image;
+        img.alt = m.album ? `Albumcover: ${m.album}` : 'Albumcover';
+        img.loading = 'lazy';
+        img.width = 72;
+        img.height = 72;
+        box.append(img);
+      }
+      const text = el('div');
+      text.append(el('p', m.track, 'pop-title'), el('p', m.artist));
+      if (m.album) text.append(el('p', m.album, 'muted'));
+      text.append(el('p', m.state === 'playing' ? 'spielt gerade' : ago(m.played_at), 'muted'));
+      if (m.url) {
+        const a = el('a', 'auf last.fm ↗');
+        a.href = m.url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        text.append(a);
+      }
+      box.append(text);
+      return box;
+    }
+    if (name === 'server' && s.server) {
+      const v = s.server;
+      const frag = document.createDocumentFragment();
+      frag.append(rows([['load', v.load1.toFixed(2)], ['cpu', pct(v.cpu_pct)]]));
+      const spark = sparkline(v.cpu_history);
+      if (spark) frag.append(spark);
+      frag.append(rows([['speicher', pct(v.mem_pct)], ['uptime', uptime(v.uptime_s)]]));
+      return frag;
+    }
+    if (name === 'weather' && s.weather) {
+      const w = s.weather;
+      const c = condition(w.code, w.is_day);
+      const head = el('div', undefined, 'pop-weather');
+      head.append(el('span', c.glyph, 'glyph'), el('span', `${w.temp_c.toFixed(1)} °C`), el('span', c.text, 'cond'));
+      const frag = document.createDocumentFragment();
+      frag.append(head, rows([['ort', 'Bierwang'], ['wind', `${Math.round(w.wind_kmh)} km/h`]]));
+      return frag;
+    }
+    return null;
+  }
+
+  const LABELS: Record<Name, string> = { music: 'Musik', server: 'Server', weather: 'Wetter' };
+
+  function renderWidgets(s: Status | null): void {
+    for (const [name, btn] of widgets) {
+      const text = btn.querySelector<HTMLElement>('[data-text]');
+      let label: string | null = null;
+      if (name === 'music' && s?.music) {
+        const m = s.music;
+        if (text) text.textContent = `${m.track} · ${m.artist}`;
+        label = `Musik: ${m.track} von ${m.artist}`;
+      } else if (name === 'server' && s?.server) {
+        if (text) text.textContent = pct(s.server.cpu_pct);
+        label = `Server: CPU ${pct(s.server.cpu_pct)}`;
+      } else if (name === 'weather' && s?.weather) {
+        const c = condition(s.weather.code, s.weather.is_day);
+        const glyph = btn.querySelector<HTMLElement>('[data-glyph]');
+        if (glyph) glyph.textContent = c.glyph;
+        if (text) text.textContent = deg(s.weather.temp_c);
+        label = `Wetter: ${deg(s.weather.temp_c)}, ${c.text}`;
+      }
+      btn.hidden = label === null;
+      if (label) btn.setAttribute('aria-label', label);
+    }
+    if (root) root.hidden = [...widgets.values()].every((b) => b.hidden);
+  }
+
+  let open: Name | null = null;
+  let shown = '';
+
+  function place(btn: HTMLElement): void {
+    if (!pop) return;
+    const nav = pop.offsetParent as HTMLElement | null;
+    const navBox = (nav ?? document.body).getBoundingClientRect();
+    const b = btn.getBoundingClientRect();
+    const margin = 8;
+    const max = navBox.width - pop.offsetWidth - margin;
+    pop.style.left = `${Math.max(margin, Math.min(b.left - navBox.left, max))}px`;
+  }
+
+  function close(returnFocus: boolean): void {
+    if (!pop || !open) return;
+    const btn = widgets.get(open);
+    open = null;
+    pop.hidden = true;
+    pop.replaceChildren();
+    for (const b of widgets.values()) b.setAttribute('aria-expanded', 'false');
+    if (returnFocus) btn?.focus();
+  }
+
+  function show(name: Name): void {
+    const s = latest();
+    const btn = widgets.get(name);
+    const content = s && popContent(name, s);
+    if (!pop || !btn || !content) return close(false);
+    open = name;
+    shown = JSON.stringify(s[name]);
+    pop.replaceChildren(content);
+    pop.setAttribute('aria-label', LABELS[name]);
+    pop.hidden = false;
+    for (const [n, b] of widgets) b.setAttribute('aria-expanded', String(n === name));
+    place(btn);
+  }
+
+  for (const [name, btn] of widgets) {
+    btn.addEventListener('click', () => {
+      if (open === name) close(false);
+      else show(name);
+    });
+  }
+
+  document.addEventListener(
+    'keydown',
+    (e) => {
+      if (e.key !== 'Escape' || !open) return;
+      e.preventDefault();
+      e.stopPropagation();
+      close(true);
+    },
+    true
+  );
+
+  document.addEventListener(
+    'pointerdown',
+    (e) => {
+      if (!open) return;
+      const t = e.target as Node;
+      if (pop?.contains(t) || [...widgets.values()].some((b) => b.contains(t))) return;
+      close(false);
+    },
+    true
+  );
+
+  window.addEventListener('resize', () => {
+    if (!open) return;
+    const btn = widgets.get(open);
+    if (btn && btn.getClientRects().length) place(btn);
+    else close(false);
+  });
+
+  subscribe((s) => {
+    renderWidgets(s);
+    if (!open) return;
+    const key = JSON.stringify(s?.[open] ?? null);
+    if (key !== shown) show(open);
+  });
+  startPolling();
+</script>

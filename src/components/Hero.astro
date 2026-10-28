@@ -1,21 +1,18 @@
 ---
 import { Image } from 'astro:assets';
+import { about } from '../data/about';
 import portrait from '../assets/profilepicture.png';
 ---
 <section class="hero" id="top">
   <div class="text">
-    <p class="prompt" aria-hidden="true">paul@paul.wtf <span>:~</span></p>
+    <p class="prompt" aria-hidden="true">paul@paul.wtf<span class="dim">:~</span><span class="cmd"><span class="dim">$</span> whoami</span><span class="cur"></span></p>
     <h1>
       Paul <em>Reitmayer</em>
     </h1>
-    <p class="tagline">
-      Elektrotechniker am Erdgasspeicher Bierwang. Software-Engineering als Hobby.
-    </p>
+    <p class="tagline">{about.tagline}</p>
     <a class="btn" href="#projects">Projekte ansehen →</a>
   </div>
-  <!-- Das eine fokussierte Fenster auf dem Desktop: solider Teal-Border
-       wie hyprlands col.active_border im Zen-Modus. -->
-  <div class="photo">
+  <div class="photo window">
     <Image
       src={portrait}
       alt="Foto von Paul Reitmayer"
@@ -31,32 +28,48 @@ import portrait from '../assets/profilepicture.png';
   .hero {
     max-width: 1180px;
     margin: 0 auto;
-    padding: clamp(3rem, 8vw, 6rem) clamp(1.25rem, 4vw, 2rem) clamp(2rem, 5vw, 4rem);
+    padding: clamp(2rem, 6vw, 4rem) clamp(1.25rem, 4vw, 2rem) clamp(2rem, 5vw, 4rem);
+    min-height: 82vh;
     display: grid;
     grid-template-columns: 1.4fr 1fr;
     gap: clamp(1.5rem, 5vw, 3rem);
     align-items: center;
   }
+  .text { min-width: 0; }
   .prompt {
-    margin: 0 0 0.9rem;
-    font-size: 0.82rem;
-    color: var(--teal);
+    margin: 0 0 1.25rem;
+    font-size: 0.9rem;
+    color: var(--subtext0);
   }
-  .prompt span { color: var(--overlay0); }
+  .prompt .dim { color: var(--overlay0); }
+  .prompt .cmd { color: var(--text); }
+  .prompt .cur {
+    display: inline-block;
+    width: 0.6em;
+    height: 1.15em;
+    vertical-align: -0.2em;
+    margin-left: 0.15em;
+    background: var(--teal);
+    animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
   .text h1 {
-    font-size: clamp(2.1rem, 5.5vw, 3.4rem);
+    font-size: clamp(2.6rem, 8.6vw, 6.6rem);
     font-weight: 800;
+    letter-spacing: -0.055em;
+    line-height: 0.98;
   }
   .text h1 em {
+    display: block;
     font-style: normal;
     color: var(--teal);
   }
   .tagline {
     color: var(--subtext0);
-    font-size: clamp(0.92rem, 1.3vw, 1.02rem);
+    font-size: clamp(0.95rem, 1.4vw, 1.05rem);
     line-height: 1.65;
     max-width: 44ch;
-    margin: 1rem 0 1.75rem;
+    margin: 1.5rem 0 1.75rem;
   }
 
   .photo {
@@ -65,8 +78,6 @@ import portrait from '../assets/profilepicture.png';
     max-width: 320px;
     justify-self: end;
     overflow: hidden;
-    border-radius: var(--r-card);
-    box-shadow: 0 0 0 2px var(--teal), var(--card-shadow);
   }
   .photo :global(img) {
     width: 100%;
@@ -76,7 +87,10 @@ import portrait from '../assets/profilepicture.png';
   }
 
   @media (max-width: 720px) {
-    .hero { grid-template-columns: 1fr; }
+    .hero { grid-template-columns: 1fr; min-height: 0; }
     .photo { justify-self: center; max-width: 240px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .prompt .cur { animation: none; }
   }
 </style>

@@ -88,7 +88,7 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-The same tag builds two images: `ghcr.io/spotifynutzeer/homepage:v0.1.0` for the site and `ghcr.io/paul-wtf/homepage-api:v0.1.0` for the API. Update the image tags in `k8s/deployment.yaml` and `k8s/api-deployment.yaml` (and the FluxCD-managed manifests) in the release commit, then tag that commit. A new GHCR package starts private; make it public after the first push so the cluster can pull it.
+The same tag builds two images: `ghcr.io/paul-wtf/homepage:v0.1.0` for the site and `ghcr.io/paul-wtf/homepage-api:v0.1.0` for the API. Update the image tags in `k8s/deployment.yaml` and `k8s/api-deployment.yaml` (and the FluxCD-managed manifests) in the release commit, then tag that commit. A new GHCR package starts private; make it public after the first push so the cluster can pull it.
 
 ## Deploy
 

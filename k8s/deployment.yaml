@@ -30,7 +30,7 @@ spec:
               app.kubernetes.io/name: homepage
       containers:
         - name: homepage
-          image: ghcr.io/spotifynutzeer/homepage:v0.2.0
+          image: ghcr.io/paul-wtf/homepage:v0.2.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

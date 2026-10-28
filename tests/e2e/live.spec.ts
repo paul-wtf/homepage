@@ -1,4 +1,4 @@
-import { test, expect, type Page, type Route } from '@playwright/test';
+import { test, expect, type Page, type Request, type Route } from '@playwright/test';
 
 test.use({ viewport: { width: 1400, height: 900 } });
 
@@ -141,13 +141,24 @@ test.describe('live bar', () => {
       hits++;
       return fail ? route.fulfill({ status: 502, body: '' }) : route.fulfill({ json: status() });
     });
+    let served = 0;
+    const count = (r: Request) => {
+      if (r.url().endsWith('/api/status')) served++;
+    };
+    page.on('requestfinished', count);
+    // Chromium reports the 502, whose body the page never reads, as ERR_ABORTED.
+    page.on('requestfailed', count);
+    const settled = async (n: number) => {
+      await expect.poll(() => served).toBe(n);
+      await page.waitForTimeout(100);
+    };
     await page.goto('/');
-    await expect.poll(() => hits).toBe(1);
+    await settled(1);
     await page.clock.runFor(30_000);
-    await expect.poll(() => hits).toBe(2);
+    await settled(2);
     fail = true;
     await page.clock.runFor(30_000);
-    await expect.poll(() => hits).toBe(3);
+    await settled(3);
     await page.clock.runFor(90_000);
     await page.waitForTimeout(200);
     expect(hits).toBe(3);

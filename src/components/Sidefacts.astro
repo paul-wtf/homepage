@@ -1,47 +1,54 @@
 ---
 import { Image } from 'astro:assets';
-import { bmw, pax, cats } from '../data/sidefacts';
+import { bmw, pax, paxAge, cats } from '../data/sidefacts';
+import { bmwImage, catImages, paxImage } from '../data/sidefact-images';
+import { toLang } from '../data/i18n';
+import { ui } from '../data/ui';
+
+const lang = toLang(Astro.currentLocale);
+const t = ui[lang];
+const fox = pax[lang];
 ---
 <section id="sidefacts" data-ws="5" class="sidefacts section-shell" data-reveal>
   <!-- Der lange Titel würde auf Phones zweizeilig umbrechen und die
        gestrichelte Linie auf 0px kollabieren — Kurzform unter 600px. -->
   <h2 class="section-title">
     <span class="ws" aria-hidden="true">5</span>
-    <span class="t-long">Wenn ich nicht vor dem Bildschirm sitze</span>
-    <span class="t-short">Sidefacts</span>
+    <span class="t-long">{t.sections.sidefacts}</span>
+    <span class="t-short">{t.sections.sidefactsShort}</span>
   </h2>
 
   <div class="row-large">
     <article class="window card car">
       <div class="visual">
-        <Image src={bmw.image} alt="BMW i4 eDrive35" widths={[480, 720, 960]} sizes="(min-width: 720px) 480px, 100vw" />
+        <Image src={bmwImage} alt={bmw.model} widths={[480, 720, 960]} sizes="(min-width: 720px) 480px, 100vw" />
       </div>
       <div class="text">
-        <h3>BMW i4 eDrive35</h3>
-        <p>{bmw.text}</p>
+        <h3>{bmw.model}</h3>
+        <p>{bmw.text[lang]}</p>
       </div>
     </article>
 
     <article class="window card pax">
       <div class="pax-text">
         <h3>Pax</h3>
-        <p class="meta">{pax.species} · {pax.pronouns} · {pax.age}</p>
-        <p class="bio">„{pax.description}“</p>
+        <p class="meta">{fox.species} · {fox.pronouns} · {paxAge}</p>
+        <p class="bio"><q>{fox.description}</q></p>
         <div class="taglist">
-          <span class="tag-label">mag</span>
+          <span class="tag-label">{t.sidefacts.likes}</span>
           <ul class="tags">
-            {pax.likes.map((l) => <li>{l}</li>)}
+            {fox.likes.map((l) => <li>{l}</li>)}
           </ul>
         </div>
         <div class="taglist">
-          <span class="tag-label">mag nicht</span>
+          <span class="tag-label">{t.sidefacts.dislikes}</span>
           <ul class="tags dislikes">
-            {pax.dislikes.map((l) => <li>{l}</li>)}
+            {fox.dislikes.map((l) => <li>{l}</li>)}
           </ul>
         </div>
       </div>
       <div class="pax-photo">
-        <Image src={pax.image} alt="Fursona Pax (Arctic Fox)" widths={[300, 545]} sizes="(min-width: 720px) 220px, 50vw" />
+        <Image src={paxImage} alt="Fursona Pax (Arctic Fox)" widths={[300, 545]} sizes="(min-width: 720px) 220px, 50vw" />
       </div>
     </article>
   </div>
@@ -50,11 +57,11 @@ import { bmw, pax, cats } from '../data/sidefacts';
     {cats.map((c) => (
       <article class="window card cat">
         <div class="visual">
-          <Image src={c.image} alt={`Katze ${c.name}`} widths={[300, 480, 720]} sizes="(min-width: 720px) 240px, 50vw" />
+          <Image src={catImages[c.name]} alt={t.sidefacts.catAlt(c.name)} widths={[300, 480, 720]} sizes="(min-width: 720px) 240px, 50vw" />
         </div>
         <div class="cat-body">
           <h4>{c.name}</h4>
-          <p>{c.personality}</p>
+          <p>{c.personality[lang]}</p>
         </div>
       </article>
     ))}

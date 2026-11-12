@@ -1,40 +1,32 @@
 ---
+import { toLang } from '../../data/i18n';
+import { ui } from '../../data/ui';
+
+const lang = toLang(Astro.currentLocale);
+const t = ui[lang];
 const keys = [
-  { keys: ['1', '–', '6'], action: 'Workspace wechseln' },
-  { keys: ['Tab'], action: 'Übersicht aller Workspaces' },
-  { keys: ['h', 'j', 'k', 'l'], action: 'Fokus bewegen (auch Pfeiltasten)' },
-  { keys: ['Enter'], action: 'Terminal öffnen' },
-  { keys: ['Shift', 'Enter'], action: 'Launcher öffnen' },
-  { keys: ['S'], action: 'Scratchpad mit Terminal ein/aus' },
-  { keys: ['Q'], action: 'Fenster schließen' },
-  { keys: ['F'], action: 'Vollbild an/aus' },
-  { keys: ['?'], action: 'diese Übersicht' },
-  { keys: ['Esc', 'D'], action: 'zurück zur Seite' },
+  { keys: ['1', '–', '6'], action: t.desktop.keys.workspace },
+  { keys: ['Tab'], action: t.desktop.keys.overview },
+  { keys: ['h', 'j', 'k', 'l'], action: t.desktop.keys.focus },
+  { keys: ['Enter'], action: t.desktop.keys.terminal },
+  { keys: ['Shift', 'Enter'], action: t.desktop.keys.launcher },
+  { keys: ['S'], action: t.desktop.keys.scratchpad },
+  { keys: ['Q'], action: t.desktop.keys.close },
+  { keys: ['F'], action: t.desktop.keys.fullscreen },
+  { keys: ['?'], action: t.desktop.keys.keybinds },
+  { keys: ['Esc', 'D'], action: t.desktop.keys.leave },
 ];
 ---
-<div class="wm" data-wm data-overview-label="Workspace-Übersicht"></div>
+<div class="wm" data-wm></div>
 
-<div class="lock" data-lock role="dialog" aria-label="Sperrbildschirm" tabindex="-1" hidden>
+<div class="lock" data-lock role="dialog" aria-label={t.desktop.lock} tabindex="-1" hidden>
   <p class="lock-time" data-lock-time></p>
   <p class="lock-date" data-lock-date></p>
-  <p class="lock-field">Taste oder Klick entsperrt</p>
+  <p class="lock-field">{t.desktop.unlock}</p>
   <p class="lock-track" data-lock-track hidden><span class="note" aria-hidden="true">♪</span> <span data-lock-track-text></span></p>
 </div>
 
-<div
-  class="launcher"
-  data-launcher
-  data-kind-workspace="workspace"
-  data-kind-window="fenster"
-  data-kind-command="befehl"
-  data-kind-action="aktion"
-  data-action-leave="desktop verlassen"
-  data-action-lock="sperren"
-  role="dialog"
-  aria-modal="true"
-  aria-label="Launcher"
-  hidden
->
+<div class="launcher" data-launcher role="dialog" aria-modal="true" aria-label="Launcher" hidden>
   <div class="launcher-box">
     <div class="launcher-input">
       <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -43,24 +35,24 @@ const keys = [
       <input
         type="text"
         role="combobox"
-        aria-label="Suchen"
+        aria-label={t.launcher.search}
         aria-expanded="true"
         aria-controls="launcher-list"
         aria-autocomplete="list"
-        placeholder="Suchen..."
+        placeholder={t.launcher.placeholder}
         autocomplete="off"
         autocapitalize="off"
         spellcheck="false"
       />
     </div>
-    <ul id="launcher-list" role="listbox" aria-label="Treffer"></ul>
-    <p class="launcher-empty" hidden>nichts gefunden</p>
+    <ul id="launcher-list" role="listbox" aria-label={t.launcher.results}></ul>
+    <p class="launcher-empty" hidden>{t.launcher.empty}</p>
   </div>
 </div>
 
-<template data-keybinds data-label="Tastenkürzel" data-path="~/keybinds">
+<template data-keybinds data-label={t.desktop.keybinds} data-path="~/keybinds">
   <span class="path">~/keybinds</span>
-  <h3>Tastenkürzel</h3>
+  <h3>{t.desktop.keybinds}</h3>
   <dl class="keys">
     {keys.map((k) => (
       <div class="row">
@@ -69,7 +61,7 @@ const keys = [
       </div>
     ))}
   </dl>
-  <p class="muted">Der Fokus folgt der Maus.</p>
+  <p class="muted">{t.desktop.followMouse}</p>
 </template>
 
 <style is:global>

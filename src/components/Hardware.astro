@@ -1,8 +1,12 @@
 ---
 import { workstation, laptop, server } from '../data/hardware';
+import { toLang } from '../data/i18n';
+import { ui } from '../data/ui';
+
+const lang = toLang(Astro.currentLocale);
 ---
 <section id="hardware" data-ws="4" class="hardware section-shell" data-reveal>
-  <h2 class="section-title"><span class="ws" aria-hidden="true">4</span>Hardware</h2>
+  <h2 class="section-title"><span class="ws" aria-hidden="true">4</span>{ui[lang].sections.hardware}</h2>
 
   <div class="grid">
     <article class="window card workstation">
@@ -25,9 +29,9 @@ import { workstation, laptop, server } from '../data/hardware';
 
       <article class="window card compact">
         <h3 class="card-title">server</h3>
-        <p class="muted">{server.hostingNote}</p>
+        <p class="muted">{server[lang].hostingNote}</p>
         <ul class="server-list">
-          {server.lines.map((line) => <li>{line}</li>)}
+          {server[lang].lines.map((line) => <li>{line}</li>)}
         </ul>
       </article>
     </div>

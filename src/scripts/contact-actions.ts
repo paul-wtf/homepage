@@ -1,3 +1,6 @@
+import { ui } from '../data/ui';
+import { lang } from './lang';
+
 function reveal(btn: HTMLElement): string | null {
   const { emailUser, emailDomain } = btn.dataset;
   if (!emailUser || !emailDomain) return null;
@@ -34,7 +37,7 @@ document.addEventListener('click', async (event) => {
   const span = btn.querySelector<HTMLElement>('[data-discord-text]');
   if (!span || btn.classList.contains('copied')) return;
   const original = span.textContent ?? username;
-  span.textContent = 'Kopiert!';
+  span.textContent = ui[lang].contact.copied;
   btn.classList.add('copied');
   setTimeout(() => {
     span.textContent = original;

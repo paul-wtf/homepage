@@ -1,10 +1,14 @@
 ---
 import { about } from '../data/about';
+import { toLang } from '../data/i18n';
+import { ui } from '../data/ui';
+
+const lang = toLang(Astro.currentLocale);
 ---
 <section id="about" data-ws="1" class="about section-shell" data-reveal>
-  <h2 class="section-title"><span class="ws" aria-hidden="true">1</span>Über mich</h2>
+  <h2 class="section-title"><span class="ws" aria-hidden="true">1</span>{ui[lang].sections.about}</h2>
   <article class="window body">
-    {about.paragraphs.map((p) => <p>{p}</p>)}
+    {about[lang].paragraphs.map((p) => <p>{p}</p>)}
   </article>
 </section>
 

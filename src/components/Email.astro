@@ -6,8 +6,9 @@ interface Props {
   domain: string;
   label: string;
   placeholder: string;
+  hint: string;
 }
-const { user, domain, label, placeholder } = Astro.props;
+const { user, domain, label, placeholder, hint } = Astro.props;
 ---
 <button
   type="button"
@@ -21,7 +22,7 @@ const { user, domain, label, placeholder } = Astro.props;
   <div>
     <span class="label">{label}</span>
     <span class="value" data-email-text>{placeholder}</span>
-    <span class="sr-only">— in Mail-Client öffnen</span>
+    <span class="sr-only">{hint}</span>
   </div>
 </button>
 

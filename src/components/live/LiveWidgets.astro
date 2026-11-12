@@ -270,6 +270,10 @@
 
 <script>
   import { latest, startPolling, subscribe, type Music, type Status } from '../../scripts/live/status';
+  import { ui, type Ui } from '../../data/ui';
+  import { lang } from '../../scripts/lang';
+
+  const t = ui[lang].live;
 
   type Name = 'music' | 'server' | 'weather';
 
@@ -280,29 +284,29 @@
     widgets.set(el.dataset.live as Name, el);
   }
 
-  const WMO: [number[], string, string][] = [
-    [[0], '☀︎', 'sonnig'],
-    [[1], '◐', 'überwiegend klar'],
-    [[2], '◐', 'teilweise bewölkt'],
-    [[3], '☁︎', 'bewölkt'],
-    [[45, 48], '≋', 'Nebel'],
-    [[51, 53, 55], '☂︎', 'Nieselregen'],
-    [[56, 57], '☂︎', 'gefrierender Nieselregen'],
-    [[61, 63], '☂︎', 'Regen'],
-    [[65], '☂︎', 'starker Regen'],
-    [[66, 67], '☂︎', 'gefrierender Regen'],
-    [[80, 81, 82], '☂︎', 'Regenschauer'],
-    [[71, 73, 77], '❄︎', 'Schneefall'],
-    [[75], '❄︎', 'starker Schneefall'],
-    [[85, 86], '❄︎', 'Schneeschauer'],
-    [[95], 'ϟ', 'Gewitter'],
-    [[96, 99], 'ϟ', 'Gewitter mit Hagel'],
+  const WMO: [number[], string, keyof Ui['live']['conditions']][] = [
+    [[0], '☀︎', 'sunny'],
+    [[1], '◐', 'mostlyClear'],
+    [[2], '◐', 'partlyCloudy'],
+    [[3], '☁︎', 'overcast'],
+    [[45, 48], '≋', 'fog'],
+    [[51, 53, 55], '☂︎', 'drizzle'],
+    [[56, 57], '☂︎', 'freezingDrizzle'],
+    [[61, 63], '☂︎', 'rain'],
+    [[65], '☂︎', 'heavyRain'],
+    [[66, 67], '☂︎', 'freezingRain'],
+    [[80, 81, 82], '☂︎', 'showers'],
+    [[71, 73, 77], '❄︎', 'snow'],
+    [[75], '❄︎', 'heavySnow'],
+    [[85, 86], '❄︎', 'snowShowers'],
+    [[95], 'ϟ', 'thunderstorm'],
+    [[96, 99], 'ϟ', 'hail'],
   ];
 
   function condition(code: number, isDay: boolean): { glyph: string; text: string } {
-    if (code === 0 && !isDay) return { glyph: '☾', text: 'klar' };
+    if (code === 0 && !isDay) return { glyph: '☾', text: t.conditions.clearNight };
     const hit = WMO.find(([codes]) => codes.includes(code));
-    return hit ? { glyph: hit[1], text: hit[2] } : { glyph: '·', text: 'unbekannt' };
+    return hit ? { glyph: hit[1], text: t.conditions[hit[2]] } : { glyph: '·', text: t.conditions.unknown };
   }
 
   const pct = (n: number) => `${n.toFixed(1)}%`;
@@ -310,16 +314,16 @@
 
   function uptime(s: number): string {
     const d = Math.floor(s / 86400);
-    if (d > 0) return `${d} ${d === 1 ? 'Tag' : 'Tage'}`;
+    if (d > 0) return t.days(d);
     const h = Math.floor(s / 3600);
-    return h > 0 ? `${h} Std.` : `${Math.floor(s / 60)} min`;
+    return h > 0 ? t.hours(h) : t.minutes(Math.floor(s / 60));
   }
 
   function ago(iso: string | null): string {
-    const t = iso ? Date.parse(iso) : NaN;
-    if (Number.isNaN(t)) return 'zuletzt';
-    const min = Math.max(1, Math.round((Date.now() - t) / 60_000));
-    return min < 60 ? `zuletzt · vor ${min} min` : `zuletzt · vor ${Math.round(min / 60)} Std.`;
+    const at = iso ? Date.parse(iso) : NaN;
+    if (Number.isNaN(at)) return t.recent;
+    const min = Math.max(1, Math.round((Date.now() - at) / 60_000));
+    return min < 60 ? t.minutesAgo(min) : t.hoursAgo(Math.round(min / 60));
   }
 
   function el<K extends keyof HTMLElementTagNameMap>(
@@ -370,7 +374,7 @@
       if (m.image) {
         const img = el('img');
         img.src = m.image;
-        img.alt = m.album ? `Albumcover: ${m.album}` : 'Albumcover';
+        img.alt = m.album ? t.coverOf(m.album) : t.cover;
         img.loading = 'lazy';
         img.width = 72;
         img.height = 72;
@@ -379,9 +383,9 @@
       const text = el('div');
       text.append(el('p', m.track, 'pop-title'), el('p', m.artist));
       if (m.album) text.append(el('p', m.album, 'muted'));
-      text.append(el('p', m.state === 'playing' ? 'spielt gerade' : ago(m.played_at), 'muted'));
+      text.append(el('p', m.state === 'playing' ? t.playing : ago(m.played_at), 'muted'));
       if (m.url) {
-        const a = el('a', 'auf last.fm ↗');
+        const a = el('a', t.lastfm);
         a.href = m.url;
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
@@ -396,7 +400,7 @@
       frag.append(rows([['load', v.load1.toFixed(2)], ['cpu', pct(v.cpu_pct)]]));
       const spark = sparkline(v.cpu_history);
       if (spark) frag.append(spark);
-      frag.append(rows([['speicher', pct(v.mem_pct)], ['uptime', uptime(v.uptime_s)]]));
+      frag.append(rows([[t.memory, pct(v.mem_pct)], ['uptime', uptime(v.uptime_s)]]));
       return frag;
     }
     if (name === 'weather' && s.weather) {
@@ -405,13 +409,13 @@
       const head = el('div', undefined, 'pop-weather');
       head.append(el('span', c.glyph, 'glyph'), el('span', `${w.temp_c.toFixed(1)} °C`), el('span', c.text, 'cond'));
       const frag = document.createDocumentFragment();
-      frag.append(head, rows([['ort', 'Bierwang'], ['wind', `${Math.round(w.wind_kmh)} km/h`]]));
+      frag.append(head, rows([[t.place, 'Bierwang'], ['wind', `${Math.round(w.wind_kmh)} km/h`]]));
       return frag;
     }
     return null;
   }
 
-  const LABELS: Record<Name, string> = { music: 'Musik', server: 'Server', weather: 'Wetter' };
+  const LABELS: Record<Name, string> = { music: t.music, server: t.server, weather: t.weather };
 
   function renderWidgets(s: Status | null): void {
     for (const [name, btn] of widgets) {
@@ -421,16 +425,16 @@
         const m = s.music;
         if (text) text.textContent = `${m.track} · ${m.artist}`;
         btn.dataset.state = m.state;
-        label = `Musik: ${m.track} von ${m.artist}`;
+        label = t.musicLabel(m.track, m.artist);
       } else if (name === 'server' && s?.server) {
         if (text) text.textContent = pct(s.server.cpu_pct);
-        label = `Server: CPU ${pct(s.server.cpu_pct)}`;
+        label = `${t.server}: CPU ${pct(s.server.cpu_pct)}`;
       } else if (name === 'weather' && s?.weather) {
         const c = condition(s.weather.code, s.weather.is_day);
         const glyph = btn.querySelector<HTMLElement>('[data-glyph]');
         if (glyph) glyph.textContent = c.glyph;
         if (text) text.textContent = deg(s.weather.temp_c);
-        label = `Wetter: ${deg(s.weather.temp_c)}, ${c.text}`;
+        label = `${t.weather}: ${deg(s.weather.temp_c)}, ${c.text}`;
       }
       btn.hidden = label === null;
       if (label) btn.setAttribute('aria-label', label);
@@ -539,13 +543,13 @@
     }
     const text = el('div', undefined, 'toast-text');
     text.append(
-      el('p', m.state === 'playing' ? 'läuft jetzt' : 'zuletzt gehört', 'toast-app'),
+      el('p', m.state === 'playing' ? t.toastPlaying : t.toastRecent, 'toast-app'),
       el('p', m.track, 'toast-title'),
       el('p', m.artist, 'toast-body')
     );
     const close = el('button', '✕', 'toast-close');
     close.type = 'button';
-    close.setAttribute('aria-label', 'Benachrichtigung schließen');
+    close.setAttribute('aria-label', t.toastClose);
     close.addEventListener('click', () => {
       clearTimeout(toastTimer);
       dismiss(node);

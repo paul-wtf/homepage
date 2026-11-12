@@ -1,0 +1,27 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from './Nav.astro';
+import Hero from './Hero.astro';
+import About from './About.astro';
+import Projects from './Projects.astro';
+import Tools from './Tools.astro';
+import Hardware from './Hardware.astro';
+import Sidefacts from './Sidefacts.astro';
+import Contact from './Contact.astro';
+import WindowTemplates from './desktop/WindowTemplates.astro';
+import DesktopMode from './desktop/DesktopMode.astro';
+---
+<Layout>
+  <Nav />
+  <main>
+    <Hero />
+    <About />
+    <Projects />
+    <Tools />
+    <Hardware />
+    <Sidefacts />
+    <Contact />
+  </main>
+  <DesktopMode />
+  <WindowTemplates />
+</Layout>

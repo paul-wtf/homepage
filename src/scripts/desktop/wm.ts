@@ -6,6 +6,8 @@ import { createLock } from './lock';
 import { createLauncher, type LauncherEntry } from './launcher';
 import { latest } from '../live/status';
 import { markProjects } from '../live/projects';
+import { ui } from '../../data/ui';
+import { lang } from '../lang';
 
 export interface DesktopApi {
   enter(ws?: number): void;
@@ -75,7 +77,7 @@ export function initDesktop(): DesktopApi {
   const main = document.querySelector<HTMLElement>('main');
   const toggle = document.querySelector<HTMLButtonElement>('#desktop-toggle');
   const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('#top-nav a[data-section]'));
-  const launcherRoot = document.querySelector<HTMLElement>('[data-launcher]');
+  const strings = ui[lang];
   const media = matchMedia(QUALIFIES);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const ms = (n: number) => (reduced.matches ? 0 : n);
@@ -94,7 +96,7 @@ export function initDesktop(): DesktopApi {
   const overviewEl = document.createElement('div');
   overviewEl.className = 'wm-overview';
   overviewEl.setAttribute('role', 'group');
-  overviewEl.setAttribute('aria-label', wm.dataset.overviewLabel ?? '');
+  overviewEl.setAttribute('aria-label', strings.desktop.overview);
   overviewEl.hidden = true;
   let stopScrollFocus: (() => void) | null = initScrollFocus();
   const lock = createLock();
@@ -603,36 +605,36 @@ export function initDesktop(): DesktopApi {
   }
 
   function launcherEntries(): LauncherEntry[] {
-    const kinds = launcherRoot?.dataset ?? {};
+    const kind = strings.launcher;
     const entries: LauncherEntry[] = links.map((a, i) => ({
       label: `${i + 1} ${a.querySelector('.label')?.textContent ?? ''}`,
-      kind: kinds.kindWorkspace ?? '',
+      kind: kind.workspace,
       run: () => go(i + 1),
     }));
-    for (const t of document.querySelectorAll<HTMLTemplateElement>('template[data-window]')) {
-      entries.push({ label: t.dataset.label ?? '', detail: t.dataset.path, kind: kinds.kindWindow ?? '', run: () => showWindow(t) });
+    for (const tpl of document.querySelectorAll<HTMLTemplateElement>('template[data-window]')) {
+      entries.push({ label: tpl.dataset.label ?? '', detail: tpl.dataset.path, kind: kind.window, run: () => showWindow(tpl) });
     }
-    for (const t of document.querySelectorAll<HTMLTemplateElement>('template[data-cat]')) {
+    for (const tpl of document.querySelectorAll<HTMLTemplateElement>('template[data-cat]')) {
       entries.push({
-        label: t.dataset.label ?? '',
-        detail: t.dataset.path,
-        kind: kinds.kindWindow ?? '',
+        label: tpl.dataset.label ?? '',
+        detail: tpl.dataset.path,
+        kind: kind.window,
         run: () => {
-          go(Number(t.dataset.ws));
-          openPhoto(t.dataset.cat ?? '', true);
+          go(Number(tpl.dataset.ws));
+          openPhoto(tpl.dataset.cat ?? '', true);
         },
       });
     }
     const keybinds = document.querySelector<HTMLTemplateElement>('template[data-keybinds]');
     if (keybinds) {
-      entries.push({ label: keybinds.dataset.label ?? '', detail: keybinds.dataset.path, kind: kinds.kindWindow ?? '', run: openKeybinds });
+      entries.push({ label: keybinds.dataset.label ?? '', detail: keybinds.dataset.path, kind: kind.window, run: openKeybinds });
     }
     for (const c of launchable) {
-      entries.push({ label: c.usage, detail: c.description, kind: kinds.kindCommand ?? '', run: () => runInTerminal(c.line, c.complete) });
+      entries.push({ label: c.usage, detail: c.description, kind: kind.command, run: () => runInTerminal(c.line, c.complete) });
     }
     entries.push(
-      { label: kinds.actionLeave ?? '', kind: kinds.kindAction ?? '', run: () => leave() },
-      { label: kinds.actionLock ?? '', kind: kinds.kindAction ?? '', run: () => lock.now() }
+      { label: kind.leave, kind: kind.action, run: () => leave() },
+      { label: kind.lock, kind: kind.action, run: () => lock.now() }
     );
     return entries;
   }
@@ -641,7 +643,7 @@ export function initDesktop(): DesktopApi {
     const words = query.trim().split(/\s+/);
     if (words.length < 2 || !isCommand(words[0])) return null;
     const line = words.join(' ');
-    return { label: line, kind: launcherRoot?.dataset.kindCommand ?? '', run: () => runInTerminal(line, true) };
+    return { label: line, kind: strings.launcher.command, run: () => runInTerminal(line, true) };
   }
 
   function openKeybinds(): void {

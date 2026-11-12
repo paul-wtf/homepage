@@ -5,17 +5,15 @@
 // rechts ist Sky (clockColor). Auf schmalen Screens bleiben nur die
 // Workspace-Nummern übrig.
 import LiveWidgets from './live/LiveWidgets.astro';
+import { LANGS, localizedPath, toLang } from '../data/i18n';
+import { ui } from '../data/ui';
 
-const links = [
-  { href: '#about',     label: 'über mich' },
-  { href: '#projects',  label: 'projekte' },
-  { href: '#tools',     label: 'tools' },
-  { href: '#hardware',  label: 'hardware' },
-  { href: '#sidefacts', label: 'sidefacts' },
-  { href: '#contact',   label: 'kontakt' }
-];
+const lang = toLang(Astro.currentLocale);
+const t = ui[lang].nav;
+const sections = ['about', 'projects', 'tools', 'hardware', 'sidefacts', 'contact'] as const;
+const links = sections.map((id) => ({ href: `#${id}`, label: t.sections[id] }));
 ---
-<nav id="top-nav" aria-label="Hauptnavigation">
+<nav id="top-nav" aria-label={t.label}>
   <a class="brand" href="#top">paul.wtf</a>
   <ul>
     {links.map(({ href, label }, i) => (
@@ -34,9 +32,18 @@ const links = [
       id="desktop-toggle"
       class="toggle"
       aria-pressed="false"
-      title="Desktop-Modus (D)"
+      title={t.desktopTitle}
       hidden
     ><span aria-hidden="true">⊞</span> desktop</button>
+    <div class="langs" role="group" aria-label={t.language}>
+      {LANGS.map((l) =>
+        l === lang ? (
+          <span class="here" lang={l} title={t.languages[l]}>{l}</span>
+        ) : (
+          <a href={localizedPath(Astro.url.pathname, l)} lang={l} hreflang={l} title={t.languages[l]} data-lang={l}>{l}</a>
+        )
+      )}
+    </div>
     <span class="clock" data-clock aria-hidden="true">--:--</span>
   </div>
 </nav>
@@ -149,6 +156,33 @@ const links = [
     background: var(--surface0);
   }
 
+  .langs {
+    display: flex;
+    flex-shrink: 0;
+    gap: 0.1rem;
+    font-size: 0.82rem;
+  }
+  .langs > * {
+    padding: 0.28rem 0.45rem;
+    border-radius: var(--r-chip);
+    color: var(--subtext0);
+    text-decoration: none;
+    transition:
+      color var(--dur-fast) var(--ease),
+      background var(--dur-fast) var(--ease);
+  }
+  .langs .here {
+    background: var(--surface0);
+    color: var(--text);
+  }
+  .langs a:hover {
+    background: var(--surface0);
+    color: var(--text);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .langs > * { transition: none; }
+  }
+
   .clock {
     font-size: 0.82rem;
     color: var(--sky);
@@ -172,16 +206,20 @@ const links = [
     ul a .num { font-size: 0.82rem; }
   }
   @media (max-width: 640px) {
-    .brand { display: none; }
+    .brand,
+    .langs .here { display: none; }
   }
 </style>
 
 <script>
+  import { ui } from '../data/ui';
+  import { lang } from '../scripts/lang';
+
   // Uhr wie in der Bar: HH:MM, minütlich aktualisiert.
   const clock = document.querySelector<HTMLElement>('[data-clock]');
   if (clock) {
     const tick = () => {
-      clock.textContent = new Date().toLocaleTimeString('de-DE', {
+      clock.textContent = new Date().toLocaleTimeString(ui[lang].locale, {
         hour: '2-digit',
         minute: '2-digit'
       });

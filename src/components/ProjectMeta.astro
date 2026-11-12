@@ -1,16 +1,19 @@
 ---
 import { commitDate, type RepoMeta } from '../data/github';
+import { toLang } from '../data/i18n';
+import { ui } from '../data/ui';
 
 interface Props {
   meta?: RepoMeta;
 }
 
 const { meta } = Astro.props;
+const lang = toLang(Astro.currentLocale);
 ---
 {(meta?.release || meta?.lastCommit) && (
   <span class="meta">
     {meta.release}{meta.release && meta.lastCommit && ' · '}{meta.lastCommit && (
-      <>letzter Commit <time datetime={meta.lastCommit}>{commitDate(meta.lastCommit)}</time></>
+      <>{ui[lang].projects.lastCommit} <time datetime={meta.lastCommit}>{commitDate(meta.lastCommit, lang)}</time></>
     )}
   </span>
 )}

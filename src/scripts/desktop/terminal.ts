@@ -4,6 +4,7 @@ import { projects } from '../../data/projects';
 import { cats, pax } from '../../data/sidefacts';
 import { nixLogo, tools } from '../../data/tools';
 import type { Status } from '../live/status';
+import { FLAVORS, currentFlavor, isFlavor, setFlavor } from '../theme';
 
 export type TermOutput = { text: string; tone?: 'err' | 'ok' }[];
 
@@ -53,6 +54,7 @@ const COMMANDS: [string, string][] = [
   ['htop', 'Auslastung des Servers'],
   ['weather', 'Wetter in Bierwang'],
   ['linkhop <url>', 'Musik-Link für andere Dienste umwandeln'],
+  ['theme <flavor>', 'Catppuccin-Flavor wechseln'],
   ['clear', 'Ausgabe leeren'],
   ['exit', 'Fenster schließen']
 ];
@@ -63,6 +65,7 @@ const ARGUMENTS: Record<string, () => string[]> = {
   ls: () => [`${CAT_DIR}/`],
   open: () => projects.map((p) => p.name),
   man: () => ['paul'],
+  theme: () => [...FLAVORS],
 };
 
 function email(): string {
@@ -206,6 +209,13 @@ function man(topic: string | undefined): TermOutput {
   );
 }
 
+function theme(name: string | undefined): TermOutput {
+  if (!name) return lines(currentFlavor());
+  if (!isFlavor(name)) return err(`theme: ${name}: unbekannter Flavor (${FLAVORS.join(', ')})`);
+  setFlavor(name);
+  return [{ text: `Flavor: ${name}`, tone: 'ok' }];
+}
+
 function meter(label: string, pct: number): string {
   const filled = Math.max(0, Math.min(BAR_WIDTH, Math.round((pct / 100) * BAR_WIDTH)));
   return `${label.padEnd(4)} [${'|'.repeat(filled).padEnd(BAR_WIDTH)}] ${`${pct.toFixed(1)}%`.padStart(6)}`;
@@ -323,6 +333,8 @@ export function run(line: string, ctx: TerminalContext): TermOutput | Promise<Te
       return htop(ctx.live());
     case 'linkhop':
       return linkhop(args[0]);
+    case 'theme':
+      return theme(args[0]);
     case 'clear':
       ctx.clear();
       return [];

@@ -1,3 +1,5 @@
+import { THEME_EVENT } from '../theme';
+
 export type ParticleKind = 'rain' | 'snow';
 
 interface Particle {
@@ -122,6 +124,11 @@ export function createParticles(canvas: HTMLCanvasElement) {
   window.addEventListener('resize', () => {
     if (!kind) return;
     fit();
+    draw();
+  });
+  window.addEventListener(THEME_EVENT, () => {
+    if (!kind) return;
+    color = getComputedStyle(canvas).color;
     draw();
   });
 

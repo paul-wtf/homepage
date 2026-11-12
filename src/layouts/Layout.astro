@@ -26,7 +26,14 @@ import Wallpaper from '../components/Wallpaper.astro';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
 
-    <script is:inline>document.documentElement.classList.add('js');</script>
+    <script is:inline>
+      document.documentElement.classList.add('js');
+      // Key and names as in src/scripts/theme.ts, set before the first paint.
+      try {
+        const flavor = localStorage.getItem('paulwtf:theme');
+        if (['latte', 'frappe', 'macchiato'].includes(flavor)) document.documentElement.dataset.theme = flavor;
+      } catch {}
+    </script>
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalURL} />
@@ -85,6 +92,10 @@ import Wallpaper from '../components/Wallpaper.astro';
       }
     </style>
     <script>
+      import { syncThemeColor } from '../scripts/theme';
+
+      if (document.documentElement.dataset.theme) syncThemeColor();
+
       const reveals = document.querySelectorAll<HTMLElement>('[data-reveal]');
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (reduced || !('IntersectionObserver' in window)) {

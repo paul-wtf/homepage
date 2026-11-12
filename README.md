@@ -82,7 +82,7 @@ docker run --rm -p 8080:8080 homepage:dev
 
 ## Status API
 
-`api/` is a small FastAPI service behind `/api/status`, which the live bar polls. It returns the current Last.fm track, server load from Prometheus and the weather from Open-Meteo, each cached for a short time. A source that fails or has no data comes back as `null`. `projects` maps each project name to `up` or `down`, from a GET on its URL once a minute; an answer below 400 counts as up, and the live badge of the project shows the result.
+`api/` is a small FastAPI service behind `/api/status`, which the live bar polls. It returns the current Last.fm track, server load from Prometheus and the weather from Open-Meteo, each cached for a short time. A source that fails or has no data comes back as `null`. `projects` maps each project name to `up` or `down`, from a GET on its URL once a minute; an answer below 400 counts as up, and the live badge of the project shows the result. `week` is the listening of a tidalwave share over the share's range: listens, listening time, the top five artists and tracks, and the hour-by-weekday grid, refreshed every ten minutes. Desktop mode shows it in a "Musik" window on workspace 5, which only appears when there is a week. The window is titled "Meine Woche", so the share should use the moving range "last 7 days".
 
 ```bash
 cd api
@@ -101,6 +101,8 @@ uv run ruff check
 | `PROMETHEUS_URL` | `http://monitoring-kube-prometheus-prometheus.monitoring:9090` | Prometheus base URL for the server load. |
 | `WEATHER_LAT`, `WEATHER_LON` | coordinates of Bierwang | Location for the weather. |
 | `PROJECT_URLS` | `{"linkhop": "https://linkhop.paul.wtf", "tidalwave": "https://tidalwave.paul.wtf"}` | JSON object of project name and the URL to check. `{}` turns the check off. |
+| `TIDALWAVE_URL` | `https://tidalwave.paul.wtf` | Base URL of tidalwave, used for the share and the link to its page. |
+| `TIDALWAVE_SHARE_TOKEN` | unset | Token of the tidalwave share. Without it `week` is `null`. |
 
 Container:
 
@@ -122,4 +124,4 @@ The same tag builds two images: `ghcr.io/paul-wtf/homepage:v0.1.0` for the site 
 
 ## Deploy
 
-Apply manifests in `k8s/` to the cluster. The API reads `LASTFM_API_KEY` from the secret `homepage-api-credentials`; the reference is optional, so a missing secret only leaves `music` empty. In production these are reconciled by FluxCD from `paulwtf-infra/fluxcd` (`apps/homepage/`), not applied by hand.
+Apply manifests in `k8s/` to the cluster. The API reads `LASTFM_API_KEY` and `TIDALWAVE_SHARE_TOKEN` from the secret `homepage-api-credentials`. Both references are optional, so a missing key only leaves `music` or `week` empty. In production these are reconciled by FluxCD from `paulwtf-infra/fluxcd` (`apps/homepage/`), not applied by hand.

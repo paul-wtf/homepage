@@ -29,11 +29,33 @@ class Weather(BaseModel):
     wind_kmh: float
 
 
+class WeekArtist(BaseModel):
+    name: str
+    count: int
+    image: str | None = None
+
+
+class WeekTrack(BaseModel):
+    track: str
+    artist: str
+    count: int
+
+
+class Week(BaseModel):
+    listens: int
+    seconds: int
+    artists: list[WeekArtist]
+    tracks: list[WeekTrack]
+    grid: list[list[int]]
+    url: str
+
+
 class Status(BaseModel):
     music: Music | None = None
     server: Server | None = None
     weather: Weather | None = None
     projects: dict[str, Literal["up", "down"]] | None = None
+    week: Week | None = None
     generated_at: datetime
 
     @field_serializer("generated_at")

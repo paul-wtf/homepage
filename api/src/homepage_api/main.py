@@ -14,6 +14,7 @@ from homepage_api.sources.lastfm import fetch_music
 from homepage_api.sources.projects import fetch_projects
 from homepage_api.sources.prometheus import fetch_server
 from homepage_api.sources.weather import fetch_weather
+from homepage_api.sources.week import fetch_week
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -43,6 +44,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     lambda: fetch_projects(client, settings),
                     ttl=60,
                     name="projects",
+                ),
+                "week": CachedSource(
+                    lambda: fetch_week(client, settings),
+                    ttl=600,
+                    name="week",
                 ),
             }
             yield

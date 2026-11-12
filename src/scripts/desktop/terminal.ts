@@ -1,7 +1,7 @@
 import { about } from '../../data/about';
 import { contacts, emailParts } from '../../data/contact';
 import { projects } from '../../data/projects';
-import { pax } from '../../data/sidefacts';
+import { cats, pax } from '../../data/sidefacts';
 import { nixLogo, tools } from '../../data/tools';
 import type { Status } from '../live/status';
 
@@ -13,6 +13,7 @@ export interface TerminalContext {
   clear(): void;
   live(): Status | null;
   open(url: string): void;
+  photo(cat: string): void;
 }
 
 const HOST = 'paul@paul.wtf';
@@ -20,6 +21,8 @@ const PROMPT = `${HOST} ~>`;
 const WORKSPACES = 6;
 const FILES = ['über-mich', 'kontakt', 'projekte', 'pax', 'pubkey'];
 const SITE = 'https://paul.wtf';
+const CAT_DIR = 'katzen';
+const CAT_NAMES = cats.map((c) => c.name.toLowerCase());
 const UNAVAILABLE = 'nicht verfügbar';
 const LINKHOP = 'https://linkhop.paul.wtf/api/v1/convert';
 const LINKHOP_TIMEOUT = 10_000;
@@ -56,7 +59,8 @@ const COMMANDS: [string, string][] = [
 
 const COMMAND_NAMES = [...COMMANDS.map(([c]) => c.split(' ')[0]), 'neofetch'];
 const ARGUMENTS: Record<string, () => string[]> = {
-  cat: () => FILES,
+  cat: () => [...FILES, ...CAT_NAMES, ...CAT_NAMES.map((n) => `${CAT_DIR}/${n}`)],
+  ls: () => [`${CAT_DIR}/`],
   open: () => projects.map((p) => p.name),
   man: () => ['paul'],
 };
@@ -65,9 +69,25 @@ function email(): string {
   return `${emailParts.user}@${emailParts.domain}`;
 }
 
-function cat(file: string | undefined): TermOutput {
+function ls(dir: string | undefined): TermOutput {
+  const name = dir?.replace(/^(\.\/|~\/)/, '').replace(/\/$/, '');
+  if (!name) return lines([...FILES, `${CAT_DIR}/`].join('  '));
+  if (name === CAT_DIR) return lines(CAT_NAMES.join('  '));
+  if (FILES.includes(name)) return lines(name);
+  return err(`ls: cannot access '${dir}': No such file or directory`);
+}
+
+function cat(file: string | undefined, ctx: TerminalContext): TermOutput {
   if (!file) return err('cat: Datei fehlt');
-  switch (file.replace(/^(\.\/|~\/)/, '').replace(/\/$/, '')) {
+  const name = file.replace(/^(\.\/|~\/)/, '').replace(/\/$/, '');
+  if (name === CAT_DIR) return err(`cat: ${file}: Is a directory`);
+  const pet = name.toLowerCase().replace(`${CAT_DIR}/`, '');
+  const found = cats.find((c) => c.name.toLowerCase() === pet);
+  if (found) {
+    ctx.photo(pet);
+    return lines(`${found.name}: ${found.personality}`);
+  }
+  switch (name) {
     case 'über-mich':
       return [
         ...lines(about.name, about.tagline, ''),
@@ -176,7 +196,7 @@ function man(topic: string | undefined): TermOutput {
     ...tools.map((t) => indent(`${t.label.toUpperCase().replace(/\W+/g, '_')}=${t.value}`)),
     '',
     'DATEIEN',
-    indent(FILES.map((f) => `~/${f}`).join('  ')),
+    indent([...FILES, `${CAT_DIR}/`].map((f) => `~/${f}`).join('  ')),
     '',
     'SIEHE AUCH',
     indent(['help(1)', 'fastfetch(1)', 'htop(1)', ...(github ? [github] : [])].join(', ')),
@@ -279,9 +299,9 @@ export function run(line: string, ctx: TerminalContext): TermOutput | Promise<Te
     case 'whoami':
       return lines(about.name, about.tagline);
     case 'ls':
-      return lines(FILES.join('  '));
+      return ls(args[0]);
     case 'cat':
-      return cat(args[0]);
+      return cat(args[0], ctx);
     case 'fastfetch':
     case 'neofetch':
       return fastfetch();

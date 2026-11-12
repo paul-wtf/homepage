@@ -281,7 +281,7 @@ export function initDesktop(): DesktopApi {
     refreshBar();
   }
 
-  function add(el: HTMLElement): void {
+  function add(el: HTMLElement, focus = true): void {
     const space = ws(cur);
     if (!space) return;
     space.full = null;
@@ -289,8 +289,16 @@ export function initDesktop(): DesktopApi {
     space.layer.append(el);
     layout(cur);
     popIn([el], 20);
-    setFocus(el);
+    if (focus) setFocus(el);
     refreshBar();
+  }
+
+  function openPhoto(cat: string): void {
+    const t = document.querySelector<HTMLTemplateElement>(`template[data-cat="${CSS.escape(cat)}"]`);
+    if (!on || !t || ws(cur)?.wins.some((w) => w.dataset.cat === cat)) return;
+    const el = makeWindow(t.content.cloneNode(true), t.dataset.label ?? '');
+    el.dataset.cat = cat;
+    add(el, false);
   }
 
   function openWindow(content: HTMLElement): void {
@@ -305,6 +313,7 @@ export function initDesktop(): DesktopApi {
       close: () => win && closeWindow(win),
       live: latest,
       open: (url) => window.open(url, '_blank', 'noopener,noreferrer'),
+      photo: openPhoto,
     });
     openWindow(term);
     win = term.closest<HTMLElement>('.wm-window');

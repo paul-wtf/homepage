@@ -176,6 +176,16 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </div>
 </template>
 
+{cats.map((c) => {
+  const path = `~/sidefacts/katzen/${c.name.toLowerCase()}`;
+  return (
+    <template data-cat={c.name.toLowerCase()} data-label={c.name} data-path={path}>
+      <span class="path">{path}</span>
+      <Image src={c.image} alt={`Katze ${c.name}`} widths={[480, 960]} sizes="(min-width: 900px) 640px, 100vw" decoding="async" />
+    </template>
+  );
+})}
+
 <template data-window data-ws="6" data-label="GitHub" data-path="~/kontakt/github">
   <span class="path">~/kontakt/github</span>
   <a class="tile" href={contact.github.href} target="_blank" rel="noopener noreferrer">

@@ -55,13 +55,13 @@ test.describe('lock screen', () => {
   test('a key unlocks and does nothing else', async ({ page }) => {
     await desktop(page);
     const windows = page.locator('.wm-layer[data-ws="1"] .wm-window');
-    await expect(windows).toHaveCount(2);
+    await expect(windows).toHaveCount(3);
     await page.clock.runFor(IDLE);
     await expect(lock(page)).toBeVisible();
     await page.keyboard.press('q');
     await expect(lock(page)).toBeHidden();
     await expect(html(page)).not.toHaveClass(/is-locked/);
-    await expect(windows).toHaveCount(2);
+    await expect(windows).toHaveCount(3);
     await expect(page.locator('#top-nav')).toBeVisible();
 
     await page.clock.runFor(IDLE);
@@ -76,10 +76,11 @@ test.describe('lock screen', () => {
     await page.keyboard.press('Enter');
     const input = page.locator('.term input');
     await expect(input).toBeFocused();
+    const term = (await page.locator('.wm-window:has(.term)').boundingBox())!;
     await page.clock.runFor(IDLE);
     await expect(lock(page)).toBeVisible();
     await expect(input).not.toBeFocused();
-    await page.mouse.click(700, 450);
+    await page.mouse.click(term.x + term.width / 2, term.y + term.height / 2);
     await expect(lock(page)).toBeHidden();
     await expect(input).toBeFocused();
     await page.clock.runFor(IDLE);

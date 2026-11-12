@@ -167,6 +167,7 @@ const de = {
     music: 'Musik',
     homelab: 'Homelab',
     changelog: 'Changelog',
+    til: 'Heute gelernt',
   },
   paths: {
     about: 'über-mich',
@@ -194,6 +195,7 @@ const de = {
       htop: 'Auslastung des Servers',
       homelab: 'Zustand des Homelab-Clusters',
       changelog: 'Änderungen an dieser Seite',
+      til: 'was ich zuletzt gelernt habe',
       weather: 'Wetter in Bierwang',
       linkhop: 'Musik-Link für andere Dienste umwandeln',
       theme: 'Catppuccin-Flavor wechseln',
@@ -413,6 +415,7 @@ const en: Ui = {
     music: 'Music',
     homelab: 'Homelab',
     changelog: 'Changelog',
+    til: 'Today I learned',
   },
   paths: {
     about: 'about',
@@ -440,6 +443,7 @@ const en: Ui = {
       htop: 'load on the server',
       homelab: 'state of the homelab cluster',
       changelog: 'changes to this site',
+      til: 'what I learned lately',
       weather: 'weather in Bierwang',
       linkhop: 'convert a music link for other services',
       theme: 'switch the Catppuccin flavor',

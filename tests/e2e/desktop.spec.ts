@@ -72,10 +72,10 @@ test.describe('desktop mode', () => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
     });
 
-    test('workspace 1 tiles two windows without overlap', async ({ page }) => {
+    test('workspace 1 tiles three windows without overlap', async ({ page }) => {
       await page.goto('/');
       await enter(page);
-      await expect(page.locator('.wm-layer[data-ws="1"] .wm-window')).toHaveCount(2);
+      await expect(page.locator('.wm-layer[data-ws="1"] .wm-window')).toHaveCount(3);
       const wm = await page.locator('.wm').evaluate((e) => {
         const r = e.getBoundingClientRect();
         return { x: r.x, y: r.y, w: r.width, h: r.height };
@@ -89,7 +89,7 @@ test.describe('desktop mode', () => {
         expect(b.x + b.w).toBeLessThanOrEqual(wm.x + wm.w);
         expect(b.y + b.h).toBeLessThanOrEqual(wm.y + wm.h);
       }
-      expect(overlaps(bs[0], bs[1])).toBe(false);
+      for (const [i, a] of bs.entries()) for (const b of bs.slice(i + 1)) expect(overlaps(a, b)).toBe(false);
       await expect(page.locator('.wm-layer[data-ws="1"] .wm-window').first()).toHaveAttribute('role', 'region');
       await expect(page.locator('.wm-layer[data-ws="1"] .wm-window').first()).toHaveAttribute('aria-label', 'Über mich');
     });
@@ -193,7 +193,7 @@ test.describe('desktop mode', () => {
     await page.keyboard.press('Meta+q');
     await page.waitForTimeout(300);
     await expect(page.locator('.wm-layer[data-ws="1"]')).toBeVisible();
-    await expect(page.locator('.wm-layer[data-ws="1"] .wm-window')).toHaveCount(2);
+    await expect(page.locator('.wm-layer[data-ws="1"] .wm-window')).toHaveCount(3);
   });
 
   test('mode is remembered across reload', async ({ page }) => {
@@ -201,7 +201,7 @@ test.describe('desktop mode', () => {
     await enter(page);
     await page.reload();
     await expect(page.locator('html')).toHaveClass(/desktop-on/);
-    await expect(page.locator('.wm-layer[data-ws="1"] .wm-window')).toHaveCount(2);
+    await expect(page.locator('.wm-layer[data-ws="1"] .wm-window')).toHaveCount(3);
     await page.keyboard.press('Escape');
     await expect(page.locator('html')).not.toHaveClass(/desktop-on/);
     await page.reload();
@@ -277,11 +277,11 @@ test('keybinds window opens once, ? reopens it', async ({ page }) => {
   await expect(kb).toHaveCount(1);
   await expect(kb).toHaveClass(/is-focus/);
   await expect(kb).toContainText('Workspace');
-  await expect(page.locator('.wm-layer[data-ws="1"] .wm-window')).toHaveCount(3);
+  await expect(page.locator('.wm-layer[data-ws="1"] .wm-window')).toHaveCount(4);
 
   await page.keyboard.press('Escape');
   await enter(page);
-  await expect(page.locator('.wm-layer[data-ws="1"] .wm-window')).toHaveCount(2);
+  await expect(page.locator('.wm-layer[data-ws="1"] .wm-window')).toHaveCount(3);
   await expect(page.locator('.wm-window[aria-label="Tastenkürzel"]')).toHaveCount(0);
 
   await page.keyboard.press('3');

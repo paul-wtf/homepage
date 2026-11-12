@@ -6,6 +6,7 @@ import { projects } from '../../data/projects';
 import { previews } from '../../data/previews';
 import { commitDate, projectMeta } from '../../data/github';
 import { changelog, compareUrl, REPO } from '../../data/changelog';
+import { loadTil } from '../../data/til-load';
 import ProjectMeta from '../ProjectMeta.astro';
 import { tools, palette } from '../../data/tools';
 import NixLogo from '../NixLogo.astro';
@@ -32,6 +33,7 @@ const featured = projects.filter((p) => p.featured);
 const others = projects.filter((p) => !p.featured);
 const meta = await projectMeta();
 const releases = await changelog();
+const til = loadTil(lang);
 const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   (typeof contacts)[number]['kind'],
   (typeof contacts)[number]
@@ -48,6 +50,22 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   <span class="path">{`${home.about}/portrait`}</span>
   <Image src={portrait} alt={t.hero.portraitAlt} width={480} height={480} decoding="async" />
 </template>
+
+{til.length > 0 && (
+  <template data-window data-ws="1" data-label={t.windows.til} data-path="~/til">
+    <span class="path">~/til</span>
+    <h3>{t.windows.til}</h3>
+    <ol class="plain til">
+      {til.map((e) => (
+        <li>
+          <time datetime={e.date}>{commitDate(e.date, lang)}</time>
+          <p set:html={e.html} />
+          {e.link && <a class="repo source" href={e.link} target="_blank" rel="noopener noreferrer">{e.host} ↗</a>}
+        </li>
+      ))}
+    </ol>
+  </template>
+)}
 
 {featured.map((p) => (
   <template data-window data-ws="2" data-label={p.name} data-path={`${home.projects}/${p.name}`}>

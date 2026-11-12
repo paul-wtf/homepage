@@ -17,6 +17,7 @@ export default defineConfig({
     env: {
       PROJECT_META_FILE: 'tests/fixtures/project-meta.json',
       CHANGELOG_FILE: 'tests/fixtures/changelog.json',
+      TIL_FILE: 'tests/fixtures/til.json',
     },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

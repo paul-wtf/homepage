@@ -56,7 +56,7 @@ test.describe('scratchpad', () => {
   test('the workspace below stays visible, dimmed and out of reach', async ({ page }) => {
     await show(page);
     await expect(layer(page, 1)).toBeVisible();
-    await expect(layer(page, 1).locator('.wm-window')).toHaveCount(2);
+    await expect(layer(page, 1).locator('.wm-window')).toHaveCount(3);
     await expect(layer(page, 1)).toHaveCSS('filter', 'brightness(0.55)');
     await expect(page.locator('.wallpaper')).toHaveCSS('filter', 'brightness(0.55)');
     await expect(layer(page, 1)).toHaveAttribute('inert', '');
@@ -108,7 +108,7 @@ test.describe('scratchpad', () => {
   test('a terminal that is open on a workspace moves in', async ({ page }) => {
     await enterDesktop(page);
     await page.keyboard.press('Enter');
-    await expect(layer(page, 1).locator('.wm-window')).toHaveCount(3);
+    await expect(layer(page, 1).locator('.wm-window')).toHaveCount(4);
     await run(page, 'whoami');
     await page.keyboard.press('Escape');
     await page.keyboard.press('2');
@@ -117,7 +117,7 @@ test.describe('scratchpad', () => {
     await expect(page.locator('.term')).toHaveCount(1);
     await expect(scratch(page).locator('.term')).toContainText('Elektrotechniker am Erdgasspeicher Bierwang');
     await expect(input(page)).toBeFocused();
-    await expect(layer(page, 1).locator('.wm-window')).toHaveCount(2);
+    await expect(layer(page, 1).locator('.wm-window')).toHaveCount(3);
 
     await run(page, 'exit');
     await expect(scratch(page)).toBeHidden();
@@ -127,7 +127,7 @@ test.describe('scratchpad', () => {
     const tiles = await page.$$eval('.wm-layer[data-ws="1"] .wm-window', (els) =>
       els.map((e) => e.getBoundingClientRect().width)
     );
-    expect(tiles).toHaveLength(2);
+    expect(tiles).toHaveLength(3);
     expect(tiles[0]).toBeCloseTo(tiles[1], 0);
   });
 
@@ -158,7 +158,7 @@ test.describe('scratchpad', () => {
     await page.keyboard.press('Enter');
     const wins = scratch(page).locator('.wm-window');
     await expect(wins).toHaveCount(2);
-    await expect(layer(page, 1).locator('.wm-window')).toHaveCount(2);
+    await expect(layer(page, 1).locator('.wm-window')).toHaveCount(3);
     const [a, b] = await page.$$eval('.wm-scratch .wm-window', (els) =>
       els.map((e) => {
         const r = e.getBoundingClientRect();
@@ -189,7 +189,7 @@ test.describe('scratchpad', () => {
     await page.mouse.click(area.x + 30, area.y + area.h / 2);
     await expect(scratch(page)).toBeHidden();
     await expect(html(page)).toHaveClass(/desktop-on/);
-    await expect(layer(page, 1).locator('.wm-window')).toHaveCount(2);
+    await expect(layer(page, 1).locator('.wm-window')).toHaveCount(3);
   });
 
   test('the overview and leaving the desktop put it away', async ({ page }) => {

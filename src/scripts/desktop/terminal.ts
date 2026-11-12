@@ -61,6 +61,7 @@ const COMMANDS: [string, string][] = [
   ['htop', t.commands.htop],
   ['homelab', t.commands.homelab],
   ['changelog', t.commands.changelog],
+  ['til', t.commands.til],
   ['weather', t.commands.weather],
   ['linkhop <url>', t.commands.linkhop],
   ['theme <flavor>', t.commands.theme],
@@ -316,6 +317,18 @@ function changelog(): TermOutput {
   return lines(...out);
 }
 
+function til(): TermOutput {
+  const tpl = document.querySelector<HTMLTemplateElement>('template[data-window][data-path="~/til"]');
+  if (!tpl) return lines(`til: ${t.unavailable}`);
+  return lines(
+    ...[...tpl.content.querySelectorAll('.til > li')].flatMap((li) => {
+      const date = text(li.querySelector('time'));
+      const link = li.querySelector<HTMLAnchorElement>('a.source')?.href;
+      return [`${date}  ${text(li.querySelector('p'))}`, ...(link ? [`${' '.repeat(date.length + 2)}${link}`] : [])];
+    })
+  );
+}
+
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const https = (v: unknown): string | null => (typeof v === 'string' && v.startsWith('https://') ? v : null);
 
@@ -415,6 +428,8 @@ export function run(line: string, ctx: TerminalContext): TermOutput | Promise<Te
       return homelab(ctx.live());
     case 'changelog':
       return changelog();
+    case 'til':
+      return til();
     case 'linkhop':
       return linkhop(args[0]);
     case 'theme':

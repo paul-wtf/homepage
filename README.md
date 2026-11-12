@@ -4,7 +4,7 @@ Personal homepage for [paul.wtf](https://paul.wtf). German, dark-only, styled af
 
 ## Stack
 
-Astro 5 (static), TypeScript, Vanilla JS for the small interactive bits (mailto and Discord click-to-copy). nginx for serving, plain Kubernetes manifests for deployment.
+Astro 7 (static), TypeScript, Vanilla JS for the interactive bits (desktop mode, terminal, live bar). nginx for serving, plain Kubernetes manifests for deployment.
 
 Design spec: [`docs/superpowers/specs/2026-05-03-homepage-design.md`](docs/superpowers/specs/2026-05-03-homepage-design.md)
 Implementation plan: [`docs/superpowers/plans/2026-05-03-homepage.md`](docs/superpowers/plans/2026-05-03-homepage.md)

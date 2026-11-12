@@ -60,6 +60,24 @@ const COMMANDS: [string, string][] = [
 ];
 
 const COMMAND_NAMES = [...COMMANDS.map(([c]) => c.split(' ')[0]), 'neofetch'];
+const SESSION_ONLY = ['clear', 'exit'];
+
+export interface Launchable {
+  usage: string;
+  description: string;
+  line: string;
+  complete: boolean;
+}
+
+export const launchable: Launchable[] = COMMANDS.filter(([usage]) => !SESSION_ONLY.includes(usage)).map(
+  ([usage, description]) => {
+    const complete = !usage.includes('<');
+    return { usage, description, line: complete ? usage : `${usage.split(' ')[0]} `, complete };
+  }
+);
+
+export const isCommand = (name: string): boolean => COMMAND_NAMES.includes(name);
+
 const ARGUMENTS: Record<string, () => string[]> = {
   cat: () => [...FILES, ...CAT_NAMES, ...CAT_NAMES.map((n) => `${CAT_DIR}/${n}`)],
   ls: () => [`${CAT_DIR}/`],
@@ -348,7 +366,14 @@ export function run(line: string, ctx: TerminalContext): TermOutput | Promise<Te
   }
 }
 
-export function createTerminal(ctx: Omit<TerminalContext, 'clear'>): HTMLElement {
+export interface Terminal {
+  el: HTMLElement;
+  exec(line: string): void;
+  fill(text: string): void;
+  focus(): void;
+}
+
+export function createTerminal(ctx: Omit<TerminalContext, 'clear'>): Terminal {
   const root = document.createElement('div');
   root.className = 'term';
   root.dataset.label = 'Terminal';
@@ -396,6 +421,31 @@ export function createTerminal(ctx: Omit<TerminalContext, 'clear'>): HTMLElement
 
   print('Willkommen. „help“ zeigt alle Befehle.');
 
+  const exec = (line: string) => {
+    const echo = document.createElement('div');
+    echo.className = 'term-row';
+    const p = document.createElement('span');
+    p.className = 'term-prompt';
+    p.textContent = PROMPT;
+    echo.append(p, ` ${line}`);
+    out.append(echo);
+    if (line.trim()) {
+      history.push(line);
+      cursor = history.length;
+    }
+    const result = run(line, full);
+    if (result instanceof Promise) {
+      const pending = print('…');
+      toBottom();
+      void result.then((rows) => {
+        pending.remove();
+        show(rows);
+      });
+    } else {
+      show(result);
+    }
+  };
+
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -407,28 +457,7 @@ export function createTerminal(ctx: Omit<TerminalContext, 'clear'>): HTMLElement
       e.preventDefault();
       const line = input.value;
       input.value = '';
-      const echo = document.createElement('div');
-      echo.className = 'term-row';
-      const p = document.createElement('span');
-      p.className = 'term-prompt';
-      p.textContent = PROMPT;
-      echo.append(p, ` ${line}`);
-      out.append(echo);
-      if (line.trim()) {
-        history.push(line);
-        cursor = history.length;
-      }
-      const result = run(line, full);
-      if (result instanceof Promise) {
-        const pending = print('…');
-        toBottom();
-        void result.then((rows) => {
-          pending.remove();
-          show(rows);
-        });
-      } else {
-        show(result);
-      }
+      exec(line);
     } else if (e.key === 'Tab') {
       e.preventDefault();
       const done = complete(input.value);
@@ -448,5 +477,13 @@ export function createTerminal(ctx: Omit<TerminalContext, 'clear'>): HTMLElement
     if (!getSelection()?.toString()) input.focus();
   });
 
-  return root;
+  return {
+    el: root,
+    exec,
+    fill(text) {
+      input.value = text;
+      input.focus({ preventScroll: true });
+    },
+    focus: () => input.focus({ preventScroll: true }),
+  };
 }

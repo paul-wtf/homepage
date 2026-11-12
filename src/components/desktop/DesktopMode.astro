@@ -3,6 +3,7 @@ const keys = [
   { keys: ['1', '–', '6'], action: 'Workspace wechseln' },
   { keys: ['h', 'j', 'k', 'l'], action: 'Fokus bewegen (auch Pfeiltasten)' },
   { keys: ['Enter'], action: 'Terminal öffnen' },
+  { keys: ['Shift', 'Enter'], action: 'Launcher öffnen' },
   { keys: ['Q'], action: 'Fenster schließen' },
   { keys: ['F'], action: 'Vollbild an/aus' },
   { keys: ['?'], action: 'diese Übersicht' },
@@ -16,6 +17,43 @@ const keys = [
   <p class="lock-date" data-lock-date></p>
   <p class="lock-field">Taste oder Klick entsperrt</p>
   <p class="lock-track" data-lock-track hidden><span class="note" aria-hidden="true">♪</span> <span data-lock-track-text></span></p>
+</div>
+
+<div
+  class="launcher"
+  data-launcher
+  data-kind-workspace="workspace"
+  data-kind-window="fenster"
+  data-kind-command="befehl"
+  data-kind-action="aktion"
+  data-action-leave="desktop verlassen"
+  data-action-lock="sperren"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Launcher"
+  hidden
+>
+  <div class="launcher-box">
+    <div class="launcher-input">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" d="M10.5 17a6.5 6.5 0 1 1 0-13 6.5 6.5 0 0 1 0 13Zm4.8-1.7L20 20"/>
+      </svg>
+      <input
+        type="text"
+        role="combobox"
+        aria-label="Suchen"
+        aria-expanded="true"
+        aria-controls="launcher-list"
+        aria-autocomplete="list"
+        placeholder="Suchen..."
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+      />
+    </div>
+    <ul id="launcher-list" role="listbox" aria-label="Treffer"></ul>
+    <p class="launcher-empty" hidden>nichts gefunden</p>
+  </div>
 </div>
 
 <template data-keybinds data-label="Tastenkürzel" data-path="~/keybinds">
@@ -475,7 +513,105 @@ const keys = [
     from { opacity: 0; }
   }
 
+  /* Measures of catppuccin-zen.rasi: 600px window, 20px radius, 14px padding, eight lines. */
+  .launcher {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: grid;
+    place-items: center;
+    animation: lock-in var(--dur-fast) var(--ease-out);
+  }
+  .launcher[hidden] { display: none; }
+  .launcher-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(600px, calc(100vw - 2rem));
+    padding: 14px;
+    border-radius: 20px;
+    background: var(--mantle);
+    box-shadow: var(--card-shadow);
+  }
+  .launcher-input {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    border-radius: var(--r-window);
+    background: var(--surface0);
+    color: var(--teal);
+  }
+  .launcher-input svg { flex-shrink: 0; }
+  .launcher-input input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    outline: none;
+    background: none;
+    color: var(--text);
+    caret-color: var(--teal);
+    font: inherit;
+    font-size: 0.92rem;
+  }
+  .launcher-input input::placeholder {
+    color: var(--overlay2);
+    opacity: 1;
+  }
+  .launcher [role='listbox'] {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    height: min(8 * 40px + 7 * 4px, 100vh - 12rem);
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+    scrollbar-width: none;
+  }
+  .launcher [role='option'] {
+    display: flex;
+    flex-shrink: 0;
+    align-items: baseline;
+    gap: 10px;
+    height: 40px;
+    padding: 8px 10px;
+    border-radius: var(--r-nest);
+    color: var(--text);
+    font-size: 0.88rem;
+    line-height: 24px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .launcher-detail,
+  .launcher-kind {
+    color: var(--overlay2);
+    font-size: 0.76rem;
+  }
+  .launcher-detail {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .launcher [aria-selected='true'] {
+    background: var(--teal);
+    color: var(--crust);
+    font-weight: 700;
+  }
+  .launcher [aria-selected='true'] span { color: inherit; }
+  .launcher-empty {
+    position: absolute;
+    align-self: center;
+    margin: 6rem 0 0;
+    color: var(--overlay2);
+    font-size: 0.88rem;
+  }
+  .launcher-empty[hidden] { display: none; }
+
   .wallpaper { transition: filter var(--dur) var(--ease); }
+  html.is-locked .launcher,
   html.is-locked #top-nav,
   html.is-locked .wm,
   html.is-locked .zen-frame,
@@ -485,7 +621,8 @@ const keys = [
     transform: scale(1.04);
   }
   @media (prefers-reduced-motion: reduce) {
-    .lock { animation: none; }
+    .lock,
+    .launcher { animation: none; }
     .wallpaper { transition: none; }
   }
 

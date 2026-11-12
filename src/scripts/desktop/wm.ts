@@ -1,8 +1,9 @@
 import { dwindle, type Rect } from './layout';
 import { initScrollFocus } from '../scroll-focus';
 import { revealEmails } from '../contact-actions';
-import { createTerminal } from './terminal';
+import { createTerminal, isCommand, launchable, type Terminal } from './terminal';
 import { createLock } from './lock';
+import { createLauncher, type LauncherEntry } from './launcher';
 import { latest } from '../live/status';
 import { markProjects } from '../live/projects';
 
@@ -70,6 +71,7 @@ export function initDesktop(): DesktopApi {
   const main = document.querySelector<HTMLElement>('main');
   const toggle = document.querySelector<HTMLButtonElement>('#desktop-toggle');
   const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('#top-nav a[data-section]'));
+  const launcherRoot = document.querySelector<HTMLElement>('[data-launcher]');
   const media = matchMedia(QUALIFIES);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const ms = (n: number) => (reduced.matches ? 0 : n);
@@ -81,6 +83,8 @@ export function initDesktop(): DesktopApi {
   let clearTimer = 0;
   let stopScrollFocus: (() => void) | null = initScrollFocus();
   const lock = createLock();
+  const terminals = new Map<HTMLElement, Terminal>();
+  const launcher = createLauncher(launcherEntries, typedLine);
 
   const ws = (n: number): Workspace | undefined => spaces[n - 1];
 
@@ -106,8 +110,15 @@ export function initDesktop(): DesktopApi {
     return el;
   }
 
+  function fromTemplate(t: HTMLTemplateElement): HTMLElement {
+    const el = makeWindow(t.content.cloneNode(true), t.dataset.label ?? '');
+    el.dataset.path = t.dataset.path ?? '';
+    return el;
+  }
+
   function build(): void {
     spaces = [];
+    terminals.clear();
     const layers: HTMLElement[] = [];
     for (let n = 1; n <= WORKSPACES; n++) {
       const layer = document.createElement('div');
@@ -119,7 +130,7 @@ export function initDesktop(): DesktopApi {
     for (const t of document.querySelectorAll<HTMLTemplateElement>('template[data-window]')) {
       const space = ws(Number(t.dataset.ws));
       if (!space) continue;
-      const el = makeWindow(t.content.cloneNode(true), t.dataset.label ?? '');
+      const el = fromTemplate(t);
       space.wins.push(el);
       space.layer.append(el);
     }
@@ -239,6 +250,7 @@ export function initDesktop(): DesktopApi {
   function leave(remember = true): void {
     if (!on) return;
     on = false;
+    launcher.close();
     lock.disarm();
     if (remember) writeStore(MODE_KEY, 'scroll');
     for (const el of ws(cur)?.wins ?? []) el.classList.add('is-pre');
@@ -299,12 +311,17 @@ export function initDesktop(): DesktopApi {
     refreshBar();
   }
 
-  function openPhoto(cat: string): void {
+  function openPhoto(cat: string, focus = false): void {
     const t = document.querySelector<HTMLTemplateElement>(`template[data-cat="${CSS.escape(cat)}"]`);
-    if (!on || !t || ws(cur)?.wins.some((w) => w.dataset.cat === cat)) return;
-    const el = makeWindow(t.content.cloneNode(true), t.dataset.label ?? '');
+    if (!on || !t) return;
+    const open = ws(cur)?.wins.find((w) => w.dataset.cat === cat);
+    if (open) {
+      if (focus) setFocus(open);
+      return;
+    }
+    const el = fromTemplate(t);
     el.dataset.cat = cat;
-    add(el, false);
+    add(el, focus);
   }
 
   function openWindow(content: HTMLElement): void {
@@ -312,7 +329,7 @@ export function initDesktop(): DesktopApi {
     if (on) add(makeWindow(content, content.dataset.label ?? ''));
   }
 
-  function openTerminal(): void {
+  function openTerminal(): Terminal | null {
     let win: HTMLElement | null = null;
     const term = createTerminal({
       go,
@@ -321,8 +338,82 @@ export function initDesktop(): DesktopApi {
       open: (url) => window.open(url, '_blank', 'noopener,noreferrer'),
       photo: openPhoto,
     });
-    openWindow(term);
-    win = term.closest<HTMLElement>('.wm-window');
+    openWindow(term.el);
+    win = term.el.closest<HTMLElement>('.wm-window');
+    if (!win) return null;
+    terminals.set(win, term);
+    return term;
+  }
+
+  function runInTerminal(line: string, complete: boolean): void {
+    const space = ws(cur);
+    const open = space?.wins.filter((w) => terminals.has(w)) ?? [];
+    const win = open.find((w) => w === space?.focus) ?? open[open.length - 1];
+    const term = win ? terminals.get(win) : openTerminal();
+    if (!term) return;
+    if (win) setFocus(win);
+    term.focus();
+    if (complete) term.exec(line);
+    else term.fill(line);
+  }
+
+  function showWindow(t: HTMLTemplateElement): void {
+    const n = Number(t.dataset.ws);
+    go(n);
+    const space = ws(cur);
+    if (!space || cur !== n) return;
+    const open = space.wins.find((w) => w.dataset.path === t.dataset.path);
+    if (!open) {
+      add(fromTemplate(t));
+      return;
+    }
+    if (space.full && space.full !== open) {
+      space.full = null;
+      layout(cur);
+    }
+    setFocus(open);
+  }
+
+  function launcherEntries(): LauncherEntry[] {
+    const kinds = launcherRoot?.dataset ?? {};
+    const entries: LauncherEntry[] = links.map((a, i) => ({
+      label: `${i + 1} ${a.querySelector('.label')?.textContent ?? ''}`,
+      kind: kinds.kindWorkspace ?? '',
+      run: () => go(i + 1),
+    }));
+    for (const t of document.querySelectorAll<HTMLTemplateElement>('template[data-window]')) {
+      entries.push({ label: t.dataset.label ?? '', detail: t.dataset.path, kind: kinds.kindWindow ?? '', run: () => showWindow(t) });
+    }
+    for (const t of document.querySelectorAll<HTMLTemplateElement>('template[data-cat]')) {
+      entries.push({
+        label: t.dataset.label ?? '',
+        detail: t.dataset.path,
+        kind: kinds.kindWindow ?? '',
+        run: () => {
+          go(Number(t.dataset.ws));
+          openPhoto(t.dataset.cat ?? '', true);
+        },
+      });
+    }
+    const keybinds = document.querySelector<HTMLTemplateElement>('template[data-keybinds]');
+    if (keybinds) {
+      entries.push({ label: keybinds.dataset.label ?? '', detail: keybinds.dataset.path, kind: kinds.kindWindow ?? '', run: openKeybinds });
+    }
+    for (const c of launchable) {
+      entries.push({ label: c.usage, detail: c.description, kind: kinds.kindCommand ?? '', run: () => runInTerminal(c.line, c.complete) });
+    }
+    entries.push(
+      { label: kinds.actionLeave ?? '', kind: kinds.kindAction ?? '', run: () => leave() },
+      { label: kinds.actionLock ?? '', kind: kinds.kindAction ?? '', run: () => lock.now() }
+    );
+    return entries;
+  }
+
+  function typedLine(query: string): LauncherEntry | null {
+    const words = query.trim().split(/\s+/);
+    if (words.length < 2 || !isCommand(words[0])) return null;
+    const line = words.join(' ');
+    return { label: line, kind: launcherRoot?.dataset.kindCommand ?? '', run: () => runInTerminal(line, true) };
   }
 
   function openKeybinds(): void {
@@ -415,6 +506,8 @@ export function initDesktop(): DesktopApi {
       go(Number(k));
     } else if (k === 'escape') {
       leave();
+    } else if (k === 'enter' && e.shiftKey) {
+      if (!e.repeat) launcher.open();
     } else if (k === 'enter') {
       if ((e.target as Element | null)?.closest?.(INTERACTIVE)) return;
       if (!e.repeat) openTerminal();

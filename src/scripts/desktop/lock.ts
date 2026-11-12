@@ -7,6 +7,7 @@ const INPUT = ['keydown', 'pointerdown', 'pointermove', 'wheel', 'touchstart'];
 export interface Lock {
   arm(): void;
   disarm(): void;
+  now(): void;
 }
 
 export function createLock(): Lock {
@@ -86,6 +87,10 @@ export function createLock(): Lock {
       armed = false;
       clearTimeout(idle);
       unlock(false);
+    },
+    now() {
+      clearTimeout(idle);
+      lock();
     },
   };
 }

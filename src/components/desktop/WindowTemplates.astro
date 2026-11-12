@@ -179,7 +179,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
 {cats.map((c) => {
   const path = `~/sidefacts/katzen/${c.name.toLowerCase()}`;
   return (
-    <template data-cat={c.name.toLowerCase()} data-label={c.name} data-path={path}>
+    <template data-cat={c.name.toLowerCase()} data-ws="5" data-label={c.name} data-path={path}>
       <span class="path">{path}</span>
       <Image src={c.image} alt={`Katze ${c.name}`} widths={[480, 960]} sizes="(min-width: 900px) 640px, 100vw" decoding="async" />
     </template>

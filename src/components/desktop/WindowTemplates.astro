@@ -48,7 +48,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
     )}
     <div class="head">
       <h3>{p.name}</h3>
-      {p.liveUrl && <span class="live">live · {p.liveUrl.replace(/^https?:\/\//, '')}</span>}
+      {p.liveUrl && <span class="live" data-project={p.name}><span data-word>live</span> · {p.liveUrl.replace(/^https?:\/\//, '')}</span>}
     </div>
     <p class="desc">{p.description}</p>
     <ul class="stack">

@@ -11,6 +11,7 @@ from homepage_api.cache import CachedSource
 from homepage_api.models import Status
 from homepage_api.settings import Settings
 from homepage_api.sources.lastfm import fetch_music
+from homepage_api.sources.projects import fetch_projects
 from homepage_api.sources.prometheus import fetch_server
 from homepage_api.sources.weather import fetch_weather
 
@@ -37,6 +38,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     lambda: fetch_weather(client, settings),
                     ttl=600,
                     name="weather",
+                ),
+                "projects": CachedSource(
+                    lambda: fetch_projects(client, settings),
+                    ttl=60,
+                    name="projects",
                 ),
             }
             yield

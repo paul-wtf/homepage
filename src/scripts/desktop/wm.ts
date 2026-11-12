@@ -4,6 +4,7 @@ import { revealEmails } from '../contact-actions';
 import { createTerminal } from './terminal';
 import { createLock } from './lock';
 import { latest } from '../live/status';
+import { markProjects } from '../live/projects';
 
 export interface DesktopApi {
   enter(ws?: number): void;
@@ -91,6 +92,7 @@ export function initDesktop(): DesktopApi {
     el.setAttribute('aria-label', label);
     el.append(content);
     revealEmails(el);
+    markProjects(el);
     el.addEventListener('mouseenter', () => setFocus(el));
     el.addEventListener('focusin', () => setFocus(el, false));
     return el;

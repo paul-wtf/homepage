@@ -30,7 +30,7 @@ const isLive = !!project.liveUrl;
   <div class="head">
     <h3>{project.name}</h3>
     {isLive && (
-      <span class="live">live · {project.liveUrl?.replace(/^https?:\/\//, '')}</span>
+      <span class="live" data-project={project.name}><span data-word>live</span> · {project.liveUrl?.replace(/^https?:\/\//, '')}</span>
     )}
   </div>
   <p class="desc">{project.description}</p>
@@ -86,6 +86,17 @@ const isLive = !!project.liveUrl;
     color: var(--green);
     white-space: nowrap;
   }
+
+  .live[data-state]::before {
+    content: '';
+    display: inline-block;
+    width: 0.5em;
+    height: 0.5em;
+    margin-right: 0.45em;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .live[data-state='down'] { color: var(--red); }
 
   .desc {
     color: var(--subtext0);

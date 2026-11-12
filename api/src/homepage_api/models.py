@@ -33,6 +33,7 @@ class Status(BaseModel):
     music: Music | None = None
     server: Server | None = None
     weather: Weather | None = None
+    projects: dict[str, Literal["up", "down"]] | None = None
     generated_at: datetime
 
     @field_serializer("generated_at")

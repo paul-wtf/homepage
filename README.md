@@ -74,7 +74,7 @@ docker run --rm -p 8080:8080 homepage:dev
 
 ## Status API
 
-`api/` is a small FastAPI service behind `/api/status`, which the live bar polls. It returns the current Last.fm track, server load from Prometheus and the weather from Open-Meteo, each cached for a short time. A source that fails or has no data comes back as `null`.
+`api/` is a small FastAPI service behind `/api/status`, which the live bar polls. It returns the current Last.fm track, server load from Prometheus and the weather from Open-Meteo, each cached for a short time. A source that fails or has no data comes back as `null`. `projects` maps each project name to `up` or `down`, from a GET on its URL once a minute; an answer below 400 counts as up, and the live badge of the project shows the result.
 
 ```bash
 cd api
@@ -92,6 +92,7 @@ uv run ruff check
 | `LASTFM_USER` | `SpotifyNutzeer` | Last.fm user whose tracks are shown. |
 | `PROMETHEUS_URL` | `http://monitoring-kube-prometheus-prometheus.monitoring:9090` | Prometheus base URL for the server load. |
 | `WEATHER_LAT`, `WEATHER_LON` | coordinates of Bierwang | Location for the weather. |
+| `PROJECT_URLS` | `{"linkhop": "https://linkhop.paul.wtf", "tidalwave": "https://tidalwave.paul.wtf"}` | JSON object of project name and the URL to check. `{}` turns the check off. |
 
 Container:
 

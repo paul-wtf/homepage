@@ -189,6 +189,16 @@ const keys = [
     font-size: 0.7rem;
     white-space: nowrap;
   }
+  .wm-window .live[data-state]::before {
+    content: '';
+    display: inline-block;
+    width: 0.5em;
+    height: 0.5em;
+    margin-right: 0.45em;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .wm-window .live[data-state='down'] { color: var(--red); }
   .wm-window .desc { margin-bottom: 0.6rem; }
   .wm-window .stack,
   .wm-window .tags {

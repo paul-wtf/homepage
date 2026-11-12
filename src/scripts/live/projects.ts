@@ -12,3 +12,4 @@ export function markProjects(root: ParentNode = document): void {
 }
 
 subscribe(() => markProjects());
+markProjects();

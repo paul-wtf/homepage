@@ -47,6 +47,8 @@ BROWSER_BIN=$(which brave) pnpm capture-previews         # -> linkhop-preview.we
 TW_URL=http://localhost:4319 BROWSER_BIN=$(which brave) pnpm capture-tidalwave-demo
 ```
 
+Both scripts leave a preview alone when the new shot shows the same picture, so a run without visible changes produces no diff. The workflow `.github/workflows/previews.yml` runs them every Monday (and on demand) and opens a pull request from `chore/refresh-previews` when an image changed. It needs the repository setting "Allow GitHub Actions to create and approve pull requests".
+
 ### Regenerate the OG image
 
 ```bash

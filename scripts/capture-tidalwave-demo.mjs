@@ -20,9 +20,9 @@
 // update the fixtures here.
 
 import { chromium } from 'playwright';
-import sharp from 'sharp';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { writePreview } from './lib/write-preview.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const out = resolve(__dirname, '..', 'src', 'assets', 'tidalwave-preview.webp');
@@ -42,7 +42,14 @@ const summary = {
   distinct_artists: 214,
   distinct_tracks: 689,
   distinct_albums: 176,
-  total_seconds: 273600 // -> "3d 4h"
+  total_seconds: 273600, // -> "3d 4h"
+  previous: {
+    total_listens: 1102,
+    distinct_artists: 198,
+    distinct_tracks: 640,
+    distinct_albums: 181,
+    total_seconds: 251300
+  }
 };
 
 const topArtists = [
@@ -62,11 +69,11 @@ const topTracks = [
 ];
 
 const topAlbums = [
-  { album: 'Endless Summer', count: 74 },
-  { album: 'OutRun', count: 61 },
-  { album: 'Discovery', count: 58 },
-  { album: 'Dark All Day', count: 49 },
-  { album: 'Atlas', count: 44 }
+  { album: 'Endless Summer', artist: 'The Midnight', count: 74 },
+  { album: 'OutRun', artist: 'Kavinsky', count: 61 },
+  { album: 'Discovery', artist: 'Daft Punk', count: 58 },
+  { album: 'Dark All Day', artist: 'GUNSHIP', count: 49 },
+  { album: 'Atlas', artist: 'FM-84', count: 44 }
 ];
 
 // hourly listening curve (0..23), evening peak
@@ -76,7 +83,10 @@ const weekday = [142, 128, 155, 149, 210, 188, 165];
 
 // ~30 daily metric points
 const DAY = 86_400_000;
-const now = Date.now();
+// A fixed clock keeps the shot identical from run to run, so the refresh
+// workflow only sees a change when tidalwave itself changed.
+const NOW = new Date('2026-06-12T19:42:00Z');
+const now = NOW.getTime();
 const metrics = Array.from({ length: 30 }, (_, i) => {
   const d = new Date(now - (29 - i) * DAY);
   const dow = d.getUTCDay(); // 0 Sun .. 6 Sat
@@ -122,9 +132,24 @@ try {
     colorScheme: 'dark'
   });
   const page = await context.newPage();
+  await page.clock.setFixedTime(NOW);
 
   // Mock the stats API so the frontend renders without a backend.
-  await page.route('**/auth/me', (r) => r.fulfill(json({ username: 'paul', is_admin: true })));
+  const missing = { status: 404, contentType: 'application/json', body: '{"detail":"Not Found"}' };
+  await page.route('**/stats/**', (r) => r.fulfill(missing));
+  await page.route('**/shares*', (r) => r.fulfill(json([])));
+  await page.route('**/auth/me', (r) =>
+    r.fulfill(
+      json({
+        username: 'paul',
+        is_admin: true,
+        timezone: 'Europe/Berlin',
+        disconnected: false,
+        last_synced_at: NOW.toISOString(),
+        last_played_at: recent[0].played_at
+      })
+    )
+  );
   await page.route('**/stats/summary*', (r) => r.fulfill(json(summary)));
   await page.route('**/stats/metrics-over-time*', (r) => r.fulfill(json(metrics)));
   await page.route('**/stats/top-artists*', (r) => r.fulfill(json(topArtists)));
@@ -142,8 +167,7 @@ try {
   await page.waitForTimeout(1600); // let charts settle
 
   const png = await page.screenshot({ type: 'png', fullPage: false });
-  await sharp(png).webp({ quality: 82 }).toFile(out);
-  console.log('Wrote', out);
+  console.log((await writePreview(png, out)) ? 'Wrote' : 'Unchanged', out);
 } finally {
   await browser?.close();
 }

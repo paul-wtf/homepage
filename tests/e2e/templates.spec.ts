@@ -71,7 +71,7 @@ test('email address is not in the served HTML', async ({ request }) => {
 test('scroll page text unchanged', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#about')).toContainText('Erdgasspeicher von Uniper Energy Storage');
-  await expect(page.locator('#contact')).toContainText('SpotifyNutzeer');
+  await expect(page.locator('#contact')).toContainText('paul-wtf');
   await expect(page.locator('#contact .tile.email [data-email-text]')).toHaveText('paul.reitmayer@paul.wtf');
 });
 

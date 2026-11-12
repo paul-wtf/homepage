@@ -8,7 +8,7 @@ export interface ContactEntry {
 export const emailParts = { user: 'paul.reitmayer', domain: 'paul.wtf' };
 
 export const contacts: ContactEntry[] = [
-  { kind: 'github', label: 'GitHub', value: 'SpotifyNutzeer', href: 'https://github.com/SpotifyNutzeer' },
+  { kind: 'github', label: 'GitHub', value: 'paul-wtf', href: 'https://github.com/paul-wtf' },
   { kind: 'discord', label: 'Discord', value: 'paul.wtf' },
   { kind: 'youtube', label: 'YouTube', value: '@spotifynutzer', href: 'https://www.youtube.com/@spotifynutzer' },
   { kind: 'email', label: 'Email', value: '(Email anzeigen)' }

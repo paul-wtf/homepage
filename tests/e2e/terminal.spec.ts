@@ -31,7 +31,7 @@ test.describe('terminal', () => {
   test('cat kontakt prints contacts', async ({ page }) => {
     await openTerminal(page);
     await run(page, 'cat kontakt');
-    await expect(page.locator('.term')).toContainText('SpotifyNutzeer');
+    await expect(page.locator('.term')).toContainText('paul-wtf');
     await expect(page.locator('.term')).toContainText('paul.wtf');
   });
 

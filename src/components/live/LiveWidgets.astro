@@ -25,6 +25,7 @@
   ><span class="glyph" data-glyph aria-hidden="true"></span><span data-text></span></button>
   <div id="live-popout" class="popout" data-live-popout role="region" hidden></div>
 </div>
+<div class="toasts" data-toasts aria-live="polite"></div>
 
 <style>
   .live {
@@ -177,6 +178,78 @@
     font-size: 0.82rem;
   }
 
+  /* Position and measures of NotificationPopup.qml in the zen variant. */
+  .toasts {
+    position: fixed;
+    top: calc(var(--bar-h) + 10px);
+    right: 18px;
+    z-index: 2;
+    width: min(360px, calc(100vw - 36px));
+    pointer-events: none;
+  }
+  .toasts :global(.toast) {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    border-radius: var(--r-card);
+    background: var(--base);
+    box-shadow: var(--card-shadow);
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateX(40px);
+    transition:
+      opacity var(--dur-fast) var(--ease),
+      transform 220ms var(--ease-out);
+  }
+  .toasts :global(.toast.is-in) {
+    opacity: 1;
+    transform: none;
+  }
+  .toasts :global(img) {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--r-chip);
+    object-fit: cover;
+    background: var(--surface0);
+  }
+  .toasts :global(.toast-text) {
+    flex: 1;
+    min-width: 0;
+  }
+  .toasts :global(p) {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .toasts :global(.toast-app) {
+    color: var(--overlay2);
+    font-size: 0.7rem;
+  }
+  .toasts :global(.toast-title) {
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+  .toasts :global(.toast-body) {
+    color: var(--subtext0);
+    font-size: 0.78rem;
+  }
+  .toasts :global(.toast-close) {
+    flex: 0 0 auto;
+    padding: 0 0.2rem;
+    border: 0;
+    background: none;
+    color: var(--subtext1);
+    font: inherit;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    cursor: pointer;
+  }
+  .toasts :global(.toast-close:hover) { color: var(--text); }
+
   @media (max-width: 960px) {
     .live-w[data-live='server'],
     .live-w[data-live='weather'] { display: none; }
@@ -188,11 +261,15 @@
   @media (prefers-reduced-motion: reduce) {
     .live-w { transition: none; }
     .live-w[data-state='playing'] .eq i { animation: none; }
+    .toasts :global(.toast) {
+      transform: none;
+      transition: none;
+    }
   }
 </style>
 
 <script>
-  import { latest, startPolling, subscribe, type Status } from '../../scripts/live/status';
+  import { latest, startPolling, subscribe, type Music, type Status } from '../../scripts/live/status';
 
   type Name = 'music' | 'server' | 'weather';
 
@@ -434,8 +511,63 @@
     else close(false);
   });
 
+  const toasts = document.querySelector<HTMLElement>('[data-toasts]');
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const TOAST_MS = 5000;
+  const TOAST_FADE_MS = 200;
+  let toastTimer = 0;
+  let heard: string | null = null;
+  let answered = false;
+
+  function dismiss(node: HTMLElement): void {
+    node.classList.remove('is-in');
+    if (reducedMotion.matches) node.remove();
+    else setTimeout(() => node.remove(), TOAST_FADE_MS);
+  }
+
+  function announce(m: Music): void {
+    if (!toasts) return;
+    clearTimeout(toastTimer);
+    const node = el('div', undefined, 'toast');
+    if (m.image) {
+      const img = el('img');
+      img.src = m.image;
+      img.alt = '';
+      img.width = 40;
+      img.height = 40;
+      node.append(img);
+    }
+    const text = el('div', undefined, 'toast-text');
+    text.append(
+      el('p', m.state === 'playing' ? 'läuft jetzt' : 'zuletzt gehört', 'toast-app'),
+      el('p', m.track, 'toast-title'),
+      el('p', m.artist, 'toast-body')
+    );
+    const close = el('button', '✕', 'toast-close');
+    close.type = 'button';
+    close.setAttribute('aria-label', 'Benachrichtigung schließen');
+    close.addEventListener('click', () => {
+      clearTimeout(toastTimer);
+      dismiss(node);
+    });
+    node.append(text, close);
+    toasts.replaceChildren(node);
+    void node.offsetWidth;
+    node.classList.add('is-in');
+    toastTimer = window.setTimeout(() => dismiss(node), TOAST_MS);
+  }
+
+  function trackChange(s: Status | null): void {
+    if (!s) return;
+    const key = s.music ? `${s.music.artist}\n${s.music.track}` : null;
+    if (answered && s.music && key !== heard) announce(s.music);
+    if (key) heard = key;
+    answered = true;
+  }
+
   subscribe((s) => {
     renderWidgets(s);
+    trackChange(s);
     if (!open) return;
     const key = JSON.stringify(s?.[open] ?? null);
     if (key !== shown) show(open);

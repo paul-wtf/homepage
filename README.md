@@ -33,6 +33,28 @@ The page never redirects by browser language. Mode and theme are stored per orig
 | --- | --- |
 | `GITHUB_TOKEN` | Sent as a bearer token, which lifts the limit of 60 unauthenticated requests per hour. The release workflow passes it to the image build as the secret `github_token`. |
 | `PROJECT_META_FILE` | Path to a JSON file used in place of the API (`{"<project name>": {"release": "…", "lastCommit": "…"}}`). The e2e tests and CI build with `tests/fixtures/project-meta.json` so they never touch the network. |
+| `CHANGELOG_FILE` | Path to a JSON file used in place of the API for the changelog (a list of `{"tag", "base", "date", "changes": [{"type", "scope", "subject"}]}`). The e2e tests and CI use `tests/fixtures/changelog.json`. |
+
+The same build also writes the changelog window on workspace 3. It lists the tags of `paul-wtf/homepage`, sorts them by version and compares each of the newest eight with the tag before it (`/repos/…/compare/<previous>...<tag>`). Of each range it keeps the `feat`, `fix` and `perf` commits and shows their subjects without the type, with the scope as a small tag; the date is that of the tagged commit. The first tag ever has nothing to compare with and is left out. That makes nine requests per build. They run one after another and stop at the first failure or when `x-ratelimit-remaining` reaches 0, so the list ends early instead of showing a gap, and without any release the window is left out. The site image build reads `GITHUB_TOKEN` from the build secret as described above and needs to reach `api.github.com`.
+
+### Today I learned
+
+Short entries go into `src/data/til.ts`. Desktop mode shows the twelve newest in a window on workspace 1 and the terminal prints them with `til`. While the list is empty there is no window. An entry has a date, a text and an optional link:
+
+```ts
+export const til: TilEntry[] = [
+  {
+    date: '2026-11-12',
+    text: {
+      de: '`kubectl get --raw` spricht jeden Service über den API-Server an, auch **Prometheus**.',
+      en: '`kubectl get --raw` reaches any service through the API server, **Prometheus** included.',
+    },
+    link: 'https://kubernetes.io/docs/reference/kubectl/generated/kubectl_get/',
+  },
+];
+```
+
+`text` is a string, or an object with `de`, `en` or both; a page without its language shows the other one. It may use inline Markdown: `` `code` ``, `**bold**`, `*emphasis*` and `[text](https://…)`. Anything else, HTML included, shows as written. `link` must be an https URL and appears under the entry with its host name. An entry with a malformed date, an empty text or a link that is not https stops the build with a message that names it. `TIL_FILE` points the build at a JSON list of entries instead; the e2e tests and CI use `tests/fixtures/til.json`.
 
 ### Regenerate the project previews
 
@@ -82,7 +104,7 @@ docker run --rm -p 8080:8080 homepage:dev
 
 ## Status API
 
-`api/` is a small FastAPI service behind `/api/status`, which the live bar polls. It returns the current Last.fm track, server load from Prometheus and the weather from Open-Meteo, each cached for a short time. A source that fails or has no data comes back as `null`. `projects` maps each project name to `up` or `down`, from a GET on its URL once a minute; an answer below 400 counts as up, and the live badge of the project shows the result. `week` is the listening of a tidalwave share over the share's range: listens, listening time, the top five artists and tracks, and the hour-by-weekday grid, refreshed every ten minutes. Desktop mode shows it in a "Musik" window on workspace 5, which only appears when there is a week. The window is titled "Meine Woche", so the share should use the moving range "last 7 days".
+`api/` is a small FastAPI service behind `/api/status`, which the live bar polls. It returns the current Last.fm track, server load from Prometheus and the weather from Open-Meteo, each cached for a short time. A source that fails or has no data comes back as `null`. `projects` maps each project name to `up` or `down`, from a GET on its URL once a minute; an answer below 400 counts as up, and the live badge of the project shows the result. `week` is the listening of a tidalwave share over the share's range: listens, listening time, the top five artists and tracks, and the hour-by-weekday grid, refreshed every ten minutes. Desktop mode shows it in a "Musik" window on workspace 5, which only appears when there is a week. The window is titled "Meine Woche", so the share should use the moving range "last 7 days". `cluster` describes the homelab from the same Prometheus, refreshed every minute: ready and total nodes, running pods, workloads with a ready replica (deployments and statefulsets), the number of hosts behind the ingress, the Kubernetes minor version and distribution (`1.36` and `RKE2`), per node the uptime and the Longhorn storage in use and available, and the CPU and hottest NVMe temperature of the physical host (job `host-monitoring`). Each query stands on its own, so one that fails only empties its field; `cluster` is `null` when none answered. It carries no IPs, no ingress hostnames and no patch version. Desktop mode shows it in a "Homelab" window on workspace 4 and the terminal with `homelab`.
 
 ```bash
 cd api
@@ -98,7 +120,7 @@ uv run ruff check
 | --- | --- | --- |
 | `LASTFM_API_KEY` | unset | Last.fm API key. Without it `music` is `null`. |
 | `LASTFM_USER` | `SpotifyNutzeer` | Last.fm user whose tracks are shown. |
-| `PROMETHEUS_URL` | `http://monitoring-kube-prometheus-prometheus.monitoring:9090` | Prometheus base URL for the server load. |
+| `PROMETHEUS_URL` | `http://monitoring-kube-prometheus-prometheus.monitoring:9090` | Prometheus base URL for the server load and the cluster. |
 | `WEATHER_LAT`, `WEATHER_LON` | coordinates of Bierwang | Location for the weather. |
 | `PROJECT_URLS` | `{"linkhop": "https://linkhop.paul.wtf", "tidalwave": "https://tidalwave.paul.wtf"}` | JSON object of project name and the URL to check. `{}` turns the check off. |
 | `TIDALWAVE_URL` | `https://tidalwave.paul.wtf` | Base URL of tidalwave, used for the share and the link to its page. |

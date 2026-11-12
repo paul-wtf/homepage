@@ -1,26 +1,58 @@
 ---
+import { toLang } from '../../data/i18n';
+import { ui } from '../../data/ui';
+
+const lang = toLang(Astro.currentLocale);
+const t = ui[lang];
 const keys = [
-  { keys: ['1', '–', '6'], action: 'Workspace wechseln' },
-  { keys: ['h', 'j', 'k', 'l'], action: 'Fokus bewegen (auch Pfeiltasten)' },
-  { keys: ['Enter'], action: 'Terminal öffnen' },
-  { keys: ['Q'], action: 'Fenster schließen' },
-  { keys: ['F'], action: 'Vollbild an/aus' },
-  { keys: ['?'], action: 'diese Übersicht' },
-  { keys: ['Esc', 'D'], action: 'zurück zur Seite' },
+  { keys: ['1', '–', '6'], action: t.desktop.keys.workspace },
+  { keys: ['Tab'], action: t.desktop.keys.overview },
+  { keys: ['h', 'j', 'k', 'l'], action: t.desktop.keys.focus },
+  { keys: ['Enter'], action: t.desktop.keys.terminal },
+  { keys: ['Shift', 'Enter'], action: t.desktop.keys.launcher },
+  { keys: ['S'], action: t.desktop.keys.scratchpad },
+  { keys: ['Q'], action: t.desktop.keys.close },
+  { keys: ['F'], action: t.desktop.keys.fullscreen },
+  { keys: ['?'], action: t.desktop.keys.keybinds },
+  { keys: ['Esc', 'D'], action: t.desktop.keys.leave },
 ];
 ---
 <div class="wm" data-wm></div>
 
-<div class="lock" data-lock role="dialog" aria-label="Sperrbildschirm" tabindex="-1" hidden>
+<div class="lock" data-lock role="dialog" aria-label={t.desktop.lock} tabindex="-1" hidden>
   <p class="lock-time" data-lock-time></p>
   <p class="lock-date" data-lock-date></p>
-  <p class="lock-field">Taste oder Klick entsperrt</p>
+  <p class="lock-field">{t.desktop.unlock}</p>
   <p class="lock-track" data-lock-track hidden><span class="note" aria-hidden="true">♪</span> <span data-lock-track-text></span></p>
 </div>
 
-<template data-keybinds data-label="Tastenkürzel" data-path="~/keybinds">
+<div class="launcher" data-launcher role="dialog" aria-modal="true" aria-label="Launcher" hidden>
+  <div class="launcher-box">
+    <div class="launcher-input">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" d="M10.5 17a6.5 6.5 0 1 1 0-13 6.5 6.5 0 0 1 0 13Zm4.8-1.7L20 20"/>
+      </svg>
+      <input
+        type="text"
+        role="combobox"
+        aria-label={t.launcher.search}
+        aria-expanded="true"
+        aria-controls="launcher-list"
+        aria-autocomplete="list"
+        placeholder={t.launcher.placeholder}
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+      />
+    </div>
+    <ul id="launcher-list" role="listbox" aria-label={t.launcher.results}></ul>
+    <p class="launcher-empty" hidden>{t.launcher.empty}</p>
+  </div>
+</div>
+
+<template data-keybinds data-label={t.desktop.keybinds} data-path="~/keybinds">
   <span class="path">~/keybinds</span>
-  <h3>Tastenkürzel</h3>
+  <h3>{t.desktop.keybinds}</h3>
   <dl class="keys">
     {keys.map((k) => (
       <div class="row">
@@ -29,7 +61,7 @@ const keys = [
       </div>
     ))}
   </dl>
-  <p class="muted">Der Fokus folgt der Maus.</p>
+  <p class="muted">{t.desktop.followMouse}</p>
 </template>
 
 <style is:global>
@@ -63,9 +95,59 @@ const keys = [
   .wm-layer {
     position: absolute;
     inset: 0;
-    transition: transform var(--dur-slide) var(--ease-out);
+    transform-origin: 0 0;
+    border-radius: calc(var(--r-window) / var(--overview-scale, 1));
+    transition:
+      transform var(--dur-slide) var(--ease-out),
+      background-color var(--dur-slide) var(--ease-out),
+      filter var(--dur) var(--ease);
   }
   .wm-layer.is-parked { visibility: hidden; }
+  .wm-scratch { z-index: 20; }
+  html.scratch-on .wm-layer:not(.wm-scratch),
+  html.scratch-on .wallpaper { filter: brightness(0.55); }
+  .wm.is-overview .wm-layer { background-color: var(--mantle); }
+  .wm.is-overview .wm-layer.is-empty { background-color: var(--crust); }
+
+  .wm-overview[hidden] { display: none; }
+  .wm-overview { animation: lock-in var(--dur) var(--ease-out); }
+  .wm-cell {
+    position: absolute;
+    z-index: 10;
+    display: flex;
+    align-items: flex-end;
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-window);
+    background: none;
+    color: var(--subtext0);
+    font: inherit;
+    font-size: 0.82rem;
+    text-align: left;
+    cursor: pointer;
+  }
+  .wm-cell::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 var(--overview-label);
+    border-radius: var(--r-window);
+    transition: box-shadow var(--dur-fast) var(--ease);
+  }
+  .wm-cell:hover::before { box-shadow: 0 0 0 2px var(--surface1); }
+  .wm-cell[aria-current='true']::before,
+  .wm-cell:focus-visible::before { box-shadow: 0 0 0 2px var(--teal); }
+  .wm-cell:focus-visible { outline: none; }
+  .wm-cell-label {
+    padding: 0.15rem 0.6rem;
+    border-radius: var(--r-chip);
+  }
+  .wm-cell:hover .wm-cell-label { color: var(--text); }
+  .wm-cell.is-empty .wm-cell-label { color: var(--overlay0); }
+  .wm-cell[aria-current='true'] .wm-cell-label {
+    background: var(--teal);
+    color: var(--crust);
+    font-weight: 700;
+  }
 
   .wm-window {
     position: absolute;
@@ -106,7 +188,9 @@ const keys = [
   @media (prefers-reduced-motion: reduce) {
     main,
     .wm-layer,
+    .wm-cell::before,
     .wm-window { transition: none; }
+    .wm-overview { animation: none; }
   }
 
   .wm-window .path {
@@ -475,7 +559,105 @@ const keys = [
     from { opacity: 0; }
   }
 
+  /* Measures of catppuccin-zen.rasi: 600px window, 20px radius, 14px padding, eight lines. */
+  .launcher {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: grid;
+    place-items: center;
+    animation: lock-in var(--dur-fast) var(--ease-out);
+  }
+  .launcher[hidden] { display: none; }
+  .launcher-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(600px, calc(100vw - 2rem));
+    padding: 14px;
+    border-radius: 20px;
+    background: var(--mantle);
+    box-shadow: var(--card-shadow);
+  }
+  .launcher-input {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    border-radius: var(--r-window);
+    background: var(--surface0);
+    color: var(--teal);
+  }
+  .launcher-input svg { flex-shrink: 0; }
+  .launcher-input input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    outline: none;
+    background: none;
+    color: var(--text);
+    caret-color: var(--teal);
+    font: inherit;
+    font-size: 0.92rem;
+  }
+  .launcher-input input::placeholder {
+    color: var(--overlay2);
+    opacity: 1;
+  }
+  .launcher [role='listbox'] {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    height: min(8 * 40px + 7 * 4px, 100vh - 12rem);
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+    scrollbar-width: none;
+  }
+  .launcher [role='option'] {
+    display: flex;
+    flex-shrink: 0;
+    align-items: baseline;
+    gap: 10px;
+    height: 40px;
+    padding: 8px 10px;
+    border-radius: var(--r-nest);
+    color: var(--text);
+    font-size: 0.88rem;
+    line-height: 24px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .launcher-detail,
+  .launcher-kind {
+    color: var(--overlay2);
+    font-size: 0.76rem;
+  }
+  .launcher-detail {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .launcher [aria-selected='true'] {
+    background: var(--teal);
+    color: var(--crust);
+    font-weight: 700;
+  }
+  .launcher [aria-selected='true'] span { color: inherit; }
+  .launcher-empty {
+    position: absolute;
+    align-self: center;
+    margin: 6rem 0 0;
+    color: var(--overlay2);
+    font-size: 0.88rem;
+  }
+  .launcher-empty[hidden] { display: none; }
+
   .wallpaper { transition: filter var(--dur) var(--ease); }
+  html.is-locked .launcher,
   html.is-locked #top-nav,
   html.is-locked .wm,
   html.is-locked .zen-frame,
@@ -485,7 +667,8 @@ const keys = [
     transform: scale(1.04);
   }
   @media (prefers-reduced-motion: reduce) {
-    .lock { animation: none; }
+    .lock,
+    .launcher { animation: none; }
     .wallpaper { transition: none; }
   }
 

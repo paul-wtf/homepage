@@ -1,7 +1,12 @@
 ---
 import { Image } from 'astro:assets';
 import { about } from '../data/about';
+import { toLang } from '../data/i18n';
+import { ui } from '../data/ui';
 import portrait from '../assets/profilepicture.png';
+
+const lang = toLang(Astro.currentLocale);
+const t = ui[lang].hero;
 ---
 <section class="hero" id="top">
   <div class="text">
@@ -9,13 +14,13 @@ import portrait from '../assets/profilepicture.png';
     <h1>
       Paul <em>Reitmayer</em>
     </h1>
-    <p class="tagline">{about.tagline}</p>
-    <a class="btn" href="#projects">Projekte ansehen →</a>
+    <p class="tagline">{about[lang].tagline}</p>
+    <a class="btn" href="#projects">{t.cta}</a>
   </div>
   <div class="photo window">
     <Image
       src={portrait}
-      alt="Foto von Paul Reitmayer"
+      alt={t.portraitAlt}
       width={480}
       height={480}
       loading="eager"

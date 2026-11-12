@@ -9,8 +9,22 @@ import ProjectMeta from '../ProjectMeta.astro';
 import { tools, palette } from '../../data/tools';
 import NixLogo from '../NixLogo.astro';
 import { workstation, laptop, server } from '../../data/hardware';
-import { bmw, pax, cats } from '../../data/sidefacts';
+import { bmw, pax, paxAge, cats } from '../../data/sidefacts';
+import { bmwImage, catImages, paxImage } from '../../data/sidefact-images';
 import { contacts, contactIcons, emailParts } from '../../data/contact';
+import { toLang } from '../../data/i18n';
+import { ui } from '../../data/ui';
+
+const lang = toLang(Astro.currentLocale);
+const t = ui[lang];
+const me = about[lang];
+const fox = pax[lang];
+const home = {
+  about: `~/${t.paths.about}`,
+  projects: `~/${t.paths.projects}`,
+  cats: `~/sidefacts/${t.paths.cats}`,
+  contact: `~/${t.paths.contact}`,
+};
 
 const featured = projects.filter((p) => p.featured);
 const others = projects.filter((p) => !p.featured);
@@ -20,26 +34,26 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   (typeof contacts)[number]
 >;
 ---
-<template data-window data-ws="1" data-label="Über mich" data-path="~/über-mich">
-  <span class="path">~/über-mich</span>
-  <h3>{about.name}</h3>
-  <p class="tagline">{about.tagline}</p>
-  {about.paragraphs.map((p) => <p>{p}</p>)}
+<template data-window data-ws="1" data-label={t.windows.about} data-path={home.about}>
+  <span class="path">{home.about}</span>
+  <h3>{me.name}</h3>
+  <p class="tagline">{me.tagline}</p>
+  {me.paragraphs.map((p) => <p>{p}</p>)}
 </template>
 
-<template data-window data-ws="1" data-label="Porträt" data-path="~/über-mich/portrait">
-  <span class="path">~/über-mich/portrait</span>
-  <Image src={portrait} alt="Foto von Paul Reitmayer" width={480} height={480} decoding="async" />
+<template data-window data-ws="1" data-label={t.windows.portrait} data-path={`${home.about}/portrait`}>
+  <span class="path">{`${home.about}/portrait`}</span>
+  <Image src={portrait} alt={t.hero.portraitAlt} width={480} height={480} decoding="async" />
 </template>
 
 {featured.map((p) => (
-  <template data-window data-ws="2" data-label={p.name} data-path={`~/projekte/${p.name}`}>
-    <span class="path">{`~/projekte/${p.name}`}</span>
+  <template data-window data-ws="2" data-label={p.name} data-path={`${home.projects}/${p.name}`}>
+    <span class="path">{`${home.projects}/${p.name}`}</span>
     {previews[p.name] && (
       <div class="visual">
         <Image
           src={previews[p.name]}
-          alt={`Vorschau von ${p.name}`}
+          alt={t.projects.previewAlt(p.name)}
           widths={[640, 960]}
           sizes="(min-width: 900px) 640px, 100vw"
           decoding="async"
@@ -50,7 +64,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
       <h3>{p.name}</h3>
       {p.liveUrl && <span class="live" data-project={p.name}><span data-word>live</span> · {p.liveUrl.replace(/^https?:\/\//, '')}</span>}
     </div>
-    <p class="desc">{p.description}</p>
+    <p class="desc">{p.description[lang]}</p>
     <ul class="stack">
       {p.stack.map((s) => <li>{s}</li>)}
     </ul>
@@ -61,13 +75,13 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </template>
 ))}
 
-<template data-window data-ws="2" data-label="Projekte" data-path="~/projekte">
-  <span class="path">~/projekte</span>
+<template data-window data-ws="2" data-label={t.windows.projects} data-path={home.projects}>
+  <span class="path">{home.projects}</span>
   <ul class="plain projects-list">
     {others.map((p) => (
       <li>
         <a href={p.liveUrl ?? p.repoUrl} target="_blank" rel="noopener noreferrer">{p.name}</a>
-        <p class="desc">{p.description}</p>
+        <p class="desc">{p.description[lang]}</p>
         <ul class="stack">
           {p.stack.map((s) => <li>{s}</li>)}
         </ul>
@@ -77,7 +91,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </ul>
 </template>
 
-<template data-window data-ws="3" data-label="Systeminfo" data-path="~/tools/fastfetch">
+<template data-window data-ws="3" data-label={t.windows.system} data-path="~/tools/fastfetch">
   <span class="path">~/tools/fastfetch</span>
   <div class="fetch">
     <NixLogo />
@@ -120,9 +134,9 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
 <template data-window data-ws="4" data-label="Server" data-path="~/hardware/server">
   <span class="path">~/hardware/server</span>
   <h3 class="card-title">server</h3>
-  <p class="muted">{server.hostingNote}</p>
+  <p class="muted">{server[lang].hostingNote}</p>
   <ul class="plain server-list">
-    {server.lines.map((line) => <li>{line}</li>)}
+    {server[lang].lines.map((line) => <li>{line}</li>)}
   </ul>
 </template>
 
@@ -131,63 +145,63 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   <div class="pax">
     <div class="pax-text">
       <h3>Pax</h3>
-      <p class="meta">{pax.species} · {pax.pronouns} · {pax.age}</p>
-      <p class="bio">„{pax.description}“</p>
+      <p class="meta">{fox.species} · {fox.pronouns} · {paxAge}</p>
+      <p class="bio"><q>{fox.description}</q></p>
       <div class="taglist">
-        <span class="tag-label">mag</span>
+        <span class="tag-label">{t.sidefacts.likes}</span>
         <ul class="tags">
-          {pax.likes.map((l) => <li>{l}</li>)}
+          {fox.likes.map((l) => <li>{l}</li>)}
         </ul>
       </div>
       <div class="taglist">
-        <span class="tag-label">mag nicht</span>
+        <span class="tag-label">{t.sidefacts.dislikes}</span>
         <ul class="tags dislikes">
-          {pax.dislikes.map((l) => <li>{l}</li>)}
+          {fox.dislikes.map((l) => <li>{l}</li>)}
         </ul>
       </div>
     </div>
     <div class="pax-photo">
-      <Image src={pax.image} alt="Fursona Pax (Arctic Fox)" widths={[300, 545]} sizes="220px" />
+      <Image src={paxImage} alt="Fursona Pax (Arctic Fox)" widths={[300, 545]} sizes="220px" />
     </div>
   </div>
 </template>
 
-<template data-window data-ws="5" data-label="BMW" data-path="~/sidefacts/auto">
-  <span class="path">~/sidefacts/auto</span>
+<template data-window data-ws="5" data-label="BMW" data-path={`~/sidefacts/${t.paths.car}`}>
+  <span class="path">{`~/sidefacts/${t.paths.car}`}</span>
   <div class="visual">
-    <Image src={bmw.image} alt="BMW i4 eDrive35" widths={[480, 720]} sizes="480px" />
+    <Image src={bmwImage} alt={bmw.model} widths={[480, 720]} sizes="480px" />
   </div>
-  <h3>BMW i4 eDrive35</h3>
-  <p>{bmw.text}</p>
+  <h3>{bmw.model}</h3>
+  <p>{bmw.text[lang]}</p>
 </template>
 
-<template data-window data-ws="5" data-label="Katzen" data-path="~/sidefacts/katzen">
-  <span class="path">~/sidefacts/katzen</span>
+<template data-window data-ws="5" data-label={t.windows.cats} data-path={home.cats}>
+  <span class="path">{home.cats}</span>
   <div class="row-cats">
     {cats.map((c) => (
       <div class="cat">
         <div class="visual">
-          <Image src={c.image} alt={`Katze ${c.name}`} widths={[240, 480]} sizes="240px" />
+          <Image src={catImages[c.name]} alt={t.sidefacts.catAlt(c.name)} widths={[240, 480]} sizes="240px" />
         </div>
         <h4>{c.name}</h4>
-        <p>{c.personality}</p>
+        <p>{c.personality[lang]}</p>
       </div>
     ))}
   </div>
 </template>
 
 {cats.map((c) => {
-  const path = `~/sidefacts/katzen/${c.name.toLowerCase()}`;
+  const path = `${home.cats}/${c.name.toLowerCase()}`;
   return (
-    <template data-cat={c.name.toLowerCase()} data-label={c.name} data-path={path}>
+    <template data-cat={c.name.toLowerCase()} data-ws="5" data-label={c.name} data-path={path}>
       <span class="path">{path}</span>
-      <Image src={c.image} alt={`Katze ${c.name}`} widths={[480, 960]} sizes="(min-width: 900px) 640px, 100vw" decoding="async" />
+      <Image src={catImages[c.name]} alt={t.sidefacts.catAlt(c.name)} widths={[480, 960]} sizes="(min-width: 900px) 640px, 100vw" decoding="async" />
     </template>
   );
 })}
 
-<template data-window data-ws="6" data-label="GitHub" data-path="~/kontakt/github">
-  <span class="path">~/kontakt/github</span>
+<template data-window data-ws="6" data-label="GitHub" data-path={`${home.contact}/github`}>
+  <span class="path">{`${home.contact}/github`}</span>
   <a class="tile" href={contact.github.href} target="_blank" rel="noopener noreferrer">
     <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
       <path fill="currentColor" d={contactIcons.github}/>
@@ -199,8 +213,8 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </a>
 </template>
 
-<template data-window data-ws="6" data-label="Discord" data-path="~/kontakt/discord">
-  <span class="path">~/kontakt/discord</span>
+<template data-window data-ws="6" data-label="Discord" data-path={`${home.contact}/discord`}>
+  <span class="path">{`${home.contact}/discord`}</span>
   <button type="button" class="tile discord" data-discord={contact.discord.value}>
     <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
       <path fill="currentColor" d={contactIcons.discord}/>
@@ -208,13 +222,13 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
     <div>
       <span class="label">{contact.discord.label}</span>
       <span class="value" role="status" data-discord-text>{contact.discord.value}</span>
-      <span class="sr-only">— Benutzernamen in Zwischenablage kopieren</span>
+      <span class="sr-only">{t.contact.copyHint}</span>
     </div>
   </button>
 </template>
 
-<template data-window data-ws="6" data-label="YouTube" data-path="~/kontakt/youtube">
-  <span class="path">~/kontakt/youtube</span>
+<template data-window data-ws="6" data-label="YouTube" data-path={`${home.contact}/youtube`}>
+  <span class="path">{`${home.contact}/youtube`}</span>
   <a class="tile" href={contact.youtube.href} target="_blank" rel="noopener noreferrer">
     <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
       <path fill="currentColor" d={contactIcons.youtube}/>
@@ -226,22 +240,22 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </a>
 </template>
 
-<template data-window data-ws="6" data-label="E-Mail" data-path="~/kontakt/email">
-  <span class="path">~/kontakt/email</span>
+<template data-window data-ws="6" data-label={t.windows.email} data-path={`${home.contact}/email`}>
+  <span class="path">{`${home.contact}/email`}</span>
   <button type="button" class="tile email" data-email-user={emailParts.user} data-email-domain={emailParts.domain}>
     <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
       <path fill="currentColor" d={contactIcons.email}/>
     </svg>
     <div>
       <span class="label">{contact.email.label}</span>
-      <span class="value" data-email-text>{contact.email.value}</span>
-      <span class="sr-only">— in Mail-Client öffnen</span>
+      <span class="value" data-email-text>{t.contact.showEmail}</span>
+      <span class="sr-only">{t.contact.mailHint}</span>
     </div>
   </button>
 </template>
 
-<template data-window data-ws="6" data-label="GPG" data-path="~/kontakt/gpg">
-  <span class="path">~/kontakt/gpg</span>
+<template data-window data-ws="6" data-label="GPG" data-path={`${home.contact}/gpg`}>
+  <span class="path">{`${home.contact}/gpg`}</span>
   <a class="tile gpg" href={contact.gpg.href}>
     <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
       <path fill="currentColor" d={contactIcons.gpg}/>
@@ -249,7 +263,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
     <div>
       <span class="label">{contact.gpg.label}</span>
       <span class="value">{contact.gpg.value}</span>
-      <span class="sr-only">— öffentlichen Schlüssel herunterladen</span>
+      <span class="sr-only">{t.contact.keyHint}</span>
     </div>
   </a>
 </template>

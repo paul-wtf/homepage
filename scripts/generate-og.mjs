@@ -3,7 +3,10 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const out = resolve(__dirname, '..', 'public', 'og-image.png');
+const pages = [
+  { file: 'og-image.png', tagline: 'Elektrotechniker · Software-Engineering als Hobby' },
+  { file: 'og-image-en.png', tagline: 'Electrical technician · Software engineering as a hobby' },
+];
 
 const W = 1200;
 const H = 630;
@@ -14,7 +17,7 @@ const H = 630;
 const mono = "'JetBrains Mono', 'DejaVu Sans Mono', monospace";
 const palette = ['#45475a', '#f38ba8', '#a6e3a1', '#f9e2af', '#89b4fa', '#f5c2e7', '#94e2d5', '#bac2de'];
 
-const svg = `
+const svg = (tagline) => `
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
   <rect width="100%" height="100%" fill="#181825"/>
   <!-- Viewport mit konkaven Ecken -->
@@ -47,7 +50,7 @@ const svg = `
   <!-- Inhalt -->
   <text x="80" y="200" font-family=${JSON.stringify(mono)} font-size="24" fill="#94e2d5">paul@paul.wtf <tspan fill="#6c7086">:~</tspan></text>
   <text x="76" y="300" font-family=${JSON.stringify(mono)} font-size="84" font-weight="800" letter-spacing="-3" fill="#cdd6f4">Paul <tspan fill="#94e2d5">Reitmayer</tspan></text>
-  <text x="80" y="360" font-family=${JSON.stringify(mono)} font-size="27" fill="#a6adc8">Elektrotechniker · Software-Engineering als Hobby</text>
+  <text x="80" y="360" font-family=${JSON.stringify(mono)} font-size="27" fill="#a6adc8">${tagline}</text>
 
   <!-- Mocha-Palette wie im fastfetch -->
   <g>
@@ -56,5 +59,8 @@ const svg = `
 </svg>
 `;
 
-await sharp(Buffer.from(svg)).png().toFile(out);
-console.log('Wrote', out);
+for (const { file, tagline } of pages) {
+  const out = resolve(__dirname, '..', 'public', file);
+  await sharp(Buffer.from(svg(tagline))).png().toFile(out);
+  console.log('Wrote', out);
+}

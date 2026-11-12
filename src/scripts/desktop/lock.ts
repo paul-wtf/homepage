@@ -1,4 +1,6 @@
 import { latest, subscribe } from '../live/status';
+import { ui } from '../../data/ui';
+import { lang } from '../lang';
 
 const IDLE_MS = 5 * 60_000;
 const CLOCK_MS = 1000;
@@ -7,6 +9,7 @@ const INPUT = ['keydown', 'pointerdown', 'pointermove', 'wheel', 'touchstart'];
 export interface Lock {
   arm(): void;
   disarm(): void;
+  now(): void;
 }
 
 export function createLock(): Lock {
@@ -25,8 +28,8 @@ export function createLock(): Lock {
 
   function render(): void {
     const now = new Date();
-    if (time) time.textContent = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-    if (date) date.textContent = now.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+    if (time) time.textContent = now.toLocaleTimeString(ui[lang].locale, { hour: '2-digit', minute: '2-digit' });
+    if (date) date.textContent = now.toLocaleDateString(ui[lang].locale, { weekday: 'long', day: 'numeric', month: 'long' });
     const music = latest()?.music;
     if (track) track.hidden = !music;
     if (trackText && music) trackText.textContent = `${music.track} · ${music.artist}`;
@@ -86,6 +89,10 @@ export function createLock(): Lock {
       armed = false;
       clearTimeout(idle);
       unlock(false);
+    },
+    now() {
+      clearTimeout(idle);
+      lock();
     },
   };
 }

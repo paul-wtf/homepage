@@ -1,8 +1,10 @@
 import { about } from '../../data/about';
 import { contacts, emailParts } from '../../data/contact';
 import { projects } from '../../data/projects';
-import { cats, pax } from '../../data/sidefacts';
+import { cats, pax, paxAge } from '../../data/sidefacts';
 import { nixLogo, tools } from '../../data/tools';
+import { ui } from '../../data/ui';
+import { lang } from '../lang';
 import type { Status } from '../live/status';
 import { FLAVORS, currentFlavor, isFlavor, setFlavor } from '../theme';
 
@@ -17,14 +19,18 @@ export interface TerminalContext {
   photo(cat: string): void;
 }
 
+const t = ui[lang].terminal;
+const paths = ui[lang].paths;
+const me = about[lang];
+const fox = pax[lang];
+
 const HOST = 'paul@paul.wtf';
 const PROMPT = `${HOST} ~>`;
 const WORKSPACES = 6;
-const FILES = ['über-mich', 'kontakt', 'projekte', 'pax', 'pubkey'];
+const FILES = [paths.about, paths.contact, paths.projects, 'pax', 'pubkey'];
 const SITE = 'https://paul.wtf';
-const CAT_DIR = 'katzen';
+const CAT_DIR = paths.cats;
 const CAT_NAMES = cats.map((c) => c.name.toLowerCase());
-const UNAVAILABLE = 'nicht verfügbar';
 const LINKHOP = 'https://linkhop.paul.wtf/api/v1/convert';
 const LINKHOP_TIMEOUT = 10_000;
 const SERVICES: Record<string, string> = {
@@ -41,25 +47,43 @@ const lines = (...texts: string[]): TermOutput => texts.map((text) => ({ text })
 const err = (text: string): TermOutput => [{ text, tone: 'err' }];
 
 const COMMANDS: [string, string][] = [
-  ['help', 'diese Liste'],
-  ['whoami', 'wer hier sitzt'],
-  ['ls', 'Dateien anzeigen'],
-  ['cat <datei>', 'Datei ausgeben'],
-  ['fastfetch', 'System-Überblick (auch neofetch)'],
-  ['open <projekt>', 'Projekt in neuem Tab öffnen'],
-  ['man paul', 'Handbuch'],
-  ['ws <1-6>', 'Workspace wechseln'],
-  ['nowplaying', 'was gerade läuft'],
-  ['uptime', 'Laufzeit des Servers'],
-  ['htop', 'Auslastung des Servers'],
-  ['weather', 'Wetter in Bierwang'],
-  ['linkhop <url>', 'Musik-Link für andere Dienste umwandeln'],
-  ['theme <flavor>', 'Catppuccin-Flavor wechseln'],
-  ['clear', 'Ausgabe leeren'],
-  ['exit', 'Fenster schließen']
+  ['help', t.commands.help],
+  ['whoami', t.commands.whoami],
+  ['ls', t.commands.ls],
+  [`cat <${t.args.file}>`, t.commands.cat],
+  ['fastfetch', t.commands.fastfetch],
+  [`open <${t.args.project}>`, t.commands.open],
+  ['man paul', t.commands.man],
+  ['ws <1-6>', t.commands.ws],
+  ['nowplaying', t.commands.nowplaying],
+  ['uptime', t.commands.uptime],
+  ['htop', t.commands.htop],
+  ['weather', t.commands.weather],
+  ['linkhop <url>', t.commands.linkhop],
+  ['theme <flavor>', t.commands.theme],
+  ['clear', t.commands.clear],
+  ['exit', t.commands.exit]
 ];
 
 const COMMAND_NAMES = [...COMMANDS.map(([c]) => c.split(' ')[0]), 'neofetch'];
+const SESSION_ONLY = ['clear', 'exit'];
+
+export interface Launchable {
+  usage: string;
+  description: string;
+  line: string;
+  complete: boolean;
+}
+
+export const launchable: Launchable[] = COMMANDS.filter(([usage]) => !SESSION_ONLY.includes(usage)).map(
+  ([usage, description]) => {
+    const complete = !usage.includes('<');
+    return { usage, description, line: complete ? usage : `${usage.split(' ')[0]} `, complete };
+  }
+);
+
+export const isCommand = (name: string): boolean => COMMAND_NAMES.includes(name);
+
 const ARGUMENTS: Record<string, () => string[]> = {
   cat: () => [...FILES, ...CAT_NAMES, ...CAT_NAMES.map((n) => `${CAT_DIR}/${n}`)],
   ls: () => [`${CAT_DIR}/`],
@@ -81,57 +105,58 @@ function ls(dir: string | undefined): TermOutput {
 }
 
 function cat(file: string | undefined, ctx: TerminalContext): TermOutput {
-  if (!file) return err('cat: Datei fehlt');
+  if (!file) return err(t.missingFile);
   const name = file.replace(/^(\.\/|~\/)/, '').replace(/\/$/, '');
   if (name === CAT_DIR) return err(`cat: ${file}: Is a directory`);
   const pet = name.toLowerCase().replace(`${CAT_DIR}/`, '');
   const found = cats.find((c) => c.name.toLowerCase() === pet);
   if (found) {
     ctx.photo(pet);
-    return lines(`${found.name}: ${found.personality}`);
+    return lines(`${found.name}: ${found.personality[lang]}`);
   }
-  switch (name) {
-    case 'über-mich':
-      return [
-        ...lines(about.name, about.tagline, ''),
-        ...about.paragraphs.flatMap((p) => lines(p, ''))
-      ].slice(0, -1);
-    case 'kontakt': {
-      const width = Math.max(...contacts.map((c) => c.label.length));
-      return lines(
-        ...contacts.map((c) => {
-          const value = c.kind === 'email' ? email() : c.value;
-          return `${c.label.padEnd(width)}  ${value}${c.href ? `  ${new URL(c.href, SITE).href}` : ''}`;
-        })
-      );
-    }
-    case 'projekte':
-      return projects.flatMap((p, i) => [
-        ...(i ? lines('') : []),
-        ...lines(
-          p.name,
-          p.description,
-          `Stack: ${p.stack.join(', ')}`,
-          p.repoUrl,
-          ...(p.liveUrl ? [p.liveUrl] : [])
-        )
-      ]);
-    case 'pax':
-      return lines(
-        `${pax.species}, ${pax.pronouns}, ${pax.age}`,
-        pax.description,
-        '',
-        `Mag: ${pax.likes.join('; ')}`,
-        `Mag nicht: ${pax.dislikes.join('; ')}`
-      );
-    case 'pubkey': {
-      const key = contacts.find((c) => c.kind === 'gpg');
-      if (!key?.href) return err('cat: pubkey: No such file or directory');
-      return lines(`Fingerprint  ${key.value}`, `Schlüssel    ${new URL(key.href, SITE).href}`);
-    }
-    default:
-      return err(`cat: ${file}: No such file or directory`);
+  if (name === paths.about) {
+    return [...lines(me.name, me.tagline, ''), ...me.paragraphs.flatMap((p) => lines(p, ''))].slice(0, -1);
   }
+  if (name === paths.contact) {
+    const width = Math.max(...contacts.map((c) => c.label.length));
+    return lines(
+      ...contacts.map((c) => {
+        const value = c.kind === 'email' ? email() : (c.value ?? '');
+        return `${c.label.padEnd(width)}  ${value}${c.href ? `  ${new URL(c.href, SITE).href}` : ''}`;
+      })
+    );
+  }
+  if (name === paths.projects) {
+    return projects.flatMap((p, i) => [
+      ...(i ? lines('') : []),
+      ...lines(
+        p.name,
+        p.description[lang],
+        `Stack: ${p.stack.join(', ')}`,
+        p.repoUrl,
+        ...(p.liveUrl ? [p.liveUrl] : [])
+      )
+    ]);
+  }
+  if (name === 'pax') {
+    return lines(
+      `${fox.species}, ${fox.pronouns}, ${paxAge}`,
+      fox.description,
+      '',
+      `${t.likes}: ${fox.likes.join('; ')}`,
+      `${t.dislikes}: ${fox.dislikes.join('; ')}`
+    );
+  }
+  if (name === 'pubkey') {
+    const key = contacts.find((c) => c.kind === 'gpg');
+    if (!key?.href) return err('cat: pubkey: No such file or directory');
+    const width = Math.max('Fingerprint'.length, t.key.length) + 2;
+    return lines(
+      `${'Fingerprint'.padEnd(width)}${key.value ?? ''}`,
+      `${t.key.padEnd(width)}${new URL(key.href, SITE).href}`
+    );
+  }
+  return err(`cat: ${file}: No such file or directory`);
 }
 
 function fastfetch(): TermOutput {
@@ -151,31 +176,31 @@ function duration(seconds: number): string {
   const d = Math.floor(seconds / 86400);
   const h = Math.floor((seconds % 86400) / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  return d > 0 ? `${d} Tage, ${h} Std.` : h > 0 ? `${h} Std., ${m} Min.` : `${m} Min.`;
+  return d > 0 ? t.daysHours(d, h) : h > 0 ? t.hoursMinutes(h, m) : t.minutes(m);
 }
 
 function live(cmd: string, status: Status | null): TermOutput {
-  const unavailable = lines(`${cmd}: ${UNAVAILABLE}`);
+  const unavailable = lines(`${cmd}: ${t.unavailable}`);
   if (cmd === 'nowplaying') {
     const m = status?.music;
     if (!m) return unavailable;
-    return lines(`${m.state === 'playing' ? 'läuft gerade' : 'zuletzt gehört'}: ${m.artist} – ${m.track}`);
+    return lines(`${m.state === 'playing' ? t.playing : t.recent}: ${m.artist} – ${m.track}`);
   }
   if (cmd === 'uptime') {
     const s = status?.server;
     return s ? lines(`up ${duration(s.uptime_s)}`) : unavailable;
   }
   const w = status?.weather;
-  return w ? lines(`${w.temp_c.toFixed(1)} °C, Wind ${Math.round(w.wind_kmh)} km/h`) : unavailable;
+  return w ? lines(`${w.temp_c.toFixed(1)} °C, ${t.wind} ${Math.round(w.wind_kmh)} km/h`) : unavailable;
 }
 
 function openProject(name: string | undefined, ctx: TerminalContext): TermOutput {
-  if (!name) return [...err('open: Projekt fehlt'), ...lines(projects.map((p) => p.name).join('  '))];
+  if (!name) return [...err(t.missingProject), ...lines(projects.map((p) => p.name).join('  '))];
   const project = projects.find((p) => p.name.toLowerCase() === name.toLowerCase());
-  if (!project) return err(`open: ${name}: Projekt nicht gefunden`);
+  if (!project) return err(t.noProject(name));
   const url = project.liveUrl ?? project.repoUrl;
   ctx.open(url);
-  return [{ text: `öffne ${url}`, tone: 'ok' }];
+  return [{ text: t.opening(url), tone: 'ok' }];
 }
 
 function man(topic: string | undefined): TermOutput {
@@ -187,31 +212,31 @@ function man(topic: string | undefined): TermOutput {
     'PAUL(1)                    paul.wtf                    PAUL(1)',
     '',
     'NAME',
-    indent(`paul - ${about.tagline}`),
+    indent(`paul - ${me.tagline}`),
     '',
     'SYNOPSIS',
-    indent('paul [cat über-mich] [cat projekte] [open <projekt>] [cat kontakt]'),
+    indent(`paul [cat ${paths.about}] [cat ${paths.projects}] [open <${t.args.project}>] [cat ${paths.contact}]`),
     '',
-    'BESCHREIBUNG',
-    indent(about.paragraphs[0]),
+    t.manDescription,
+    indent(me.paragraphs[0]),
     '',
-    'UMGEBUNG',
+    t.manEnvironment,
     ...tools.map((t) => indent(`${t.label.toUpperCase().replace(/\W+/g, '_')}=${t.value}`)),
     '',
-    'DATEIEN',
+    t.manFiles,
     indent([...FILES, `${CAT_DIR}/`].map((f) => `~/${f}`).join('  ')),
     '',
-    'SIEHE AUCH',
+    t.manSeeAlso,
     indent(['help(1)', 'fastfetch(1)', 'htop(1)', ...(github ? [github] : [])].join(', ')),
     '',
     'BUGS',
-    indent('Keine bekannt. Meldungen nimmt „cat kontakt“ entgegen.')
+    indent(t.manBugs(`cat ${paths.contact}`))
   );
 }
 
 function theme(name: string | undefined): TermOutput {
   if (!name) return lines(currentFlavor());
-  if (!isFlavor(name)) return err(`theme: ${name}: unbekannter Flavor (${FLAVORS.join(', ')})`);
+  if (!isFlavor(name)) return err(t.unknownFlavor(name, FLAVORS.join(', ')));
   setFlavor(name);
   return [{ text: `Flavor: ${name}`, tone: 'ok' }];
 }
@@ -228,12 +253,12 @@ function sparkline(values: number[]): string {
 
 function htop(status: Status | null): TermOutput {
   const s = status?.server;
-  if (!s) return lines(`htop: ${UNAVAILABLE}`);
+  if (!s) return lines(`htop: ${t.unavailable}`);
   return lines(
     meter('CPU', s.cpu_pct),
     meter('Mem', s.mem_pct),
     `Load ${s.load1.toFixed(2)} · up ${duration(s.uptime_s)}`,
-    ...(s.cpu_history.length > 1 ? [`Verlauf  ${sparkline(s.cpu_history)}`] : [])
+    ...(s.cpu_history.length > 1 ? [`${t.history}  ${sparkline(s.cpu_history)}`] : [])
   );
 }
 
@@ -241,26 +266,26 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object
 const https = (v: unknown): string | null => (typeof v === 'string' && v.startsWith('https://') ? v : null);
 
 async function linkhop(url: string | undefined): Promise<TermOutput> {
-  if (!url) return err('linkhop: URL fehlt');
+  if (!url) return err(t.linkhop.missing);
   let res: Response;
   try {
     res = await fetch(`${LINKHOP}?url=${encodeURIComponent(url)}`, {
       signal: AbortSignal.timeout(LINKHOP_TIMEOUT),
     });
   } catch {
-    return err('linkhop: nicht erreichbar');
+    return err(t.linkhop.unreachable);
   }
-  if (res.status === 400 || res.status === 422) return err('linkhop: Link nicht erkannt');
-  if (res.status === 404) return err('linkhop: nichts gefunden');
-  if (res.status === 429) return err('linkhop: zu viele Anfragen, gleich nochmal versuchen');
-  if (!res.ok) return err(`linkhop: Fehler ${res.status}`);
+  if (res.status === 400 || res.status === 422) return err(t.linkhop.unrecognized);
+  if (res.status === 404) return err(t.linkhop.nothing);
+  if (res.status === 429) return err(t.linkhop.tooMany);
+  if (!res.ok) return err(t.linkhop.error(res.status));
   let data: unknown;
   try {
     data = await res.json();
   } catch {
     data = null;
   }
-  if (!isObj(data) || !isObj(data.source) || !isObj(data.targets)) return err('linkhop: unerwartete Antwort');
+  if (!isObj(data) || !isObj(data.source) || !isObj(data.targets)) return err(t.linkhop.unexpected);
 
   const { source, targets } = data;
   const rows: [string, string | null][] = [];
@@ -274,7 +299,7 @@ async function linkhop(url: string | undefined): Promise<TermOutput> {
   const title = typeof source.title === 'string' ? [source.title, artists.join(', ')].filter(Boolean).join(' · ') : '';
   return lines(
     ...(title ? [title] : []),
-    ...rows.map(([service, link]) => `${label(service).padEnd(width)}  ${link ?? 'nicht gefunden'}`)
+    ...rows.map(([service, link]) => `${label(service).padEnd(width)}  ${link ?? t.linkhop.notFound}`)
   );
 }
 
@@ -282,7 +307,7 @@ export function complete(line: string): { line: string; options: string[] } {
   const words = line.replace(/^\s+/, '').split(/\s+/);
   const last = words[words.length - 1].toLowerCase();
   const pool = words.length === 1 ? COMMAND_NAMES : words.length === 2 ? (ARGUMENTS[words[0]]?.() ?? []) : [];
-  const hits = pool.filter((c) => c.toLowerCase().startsWith(last)).sort((a, b) => a.localeCompare(b, 'de'));
+  const hits = pool.filter((c) => c.toLowerCase().startsWith(last)).sort((a, b) => a.localeCompare(b, lang));
   if (hits.length === 0) return { line, options: [] };
   const head = words.slice(0, -1);
   if (hits.length === 1) return { line: `${[...head, hits[0]].join(' ')} `, options: [] };
@@ -303,11 +328,12 @@ export function run(line: string, ctx: TerminalContext): TermOutput | Promise<Te
       return lines(
         ...COMMANDS.map(([c, d]) => `${c.padEnd(width)}  ${d}`),
         '',
-        'Tab vervollständigt Befehle und Dateinamen.'
+        t.helpTab,
+        t.helpScratchpad
       );
     }
     case 'whoami':
-      return lines(about.name, about.tagline);
+      return lines(me.name, me.tagline);
     case 'ls':
       return ls(args[0]);
     case 'cat':
@@ -317,7 +343,7 @@ export function run(line: string, ctx: TerminalContext): TermOutput | Promise<Te
       return fastfetch();
     case 'ws': {
       const n = Number(args[0]);
-      if (!Number.isInteger(n) || n < 1 || n > WORKSPACES) return err(`ws: Workspace 1 bis ${WORKSPACES} erwartet`);
+      if (!Number.isInteger(n) || n < 1 || n > WORKSPACES) return err(t.wsExpected(WORKSPACES));
       ctx.go(n);
       return [{ text: `Workspace ${n}`, tone: 'ok' }];
     }
@@ -348,7 +374,14 @@ export function run(line: string, ctx: TerminalContext): TermOutput | Promise<Te
   }
 }
 
-export function createTerminal(ctx: Omit<TerminalContext, 'clear'>): HTMLElement {
+export interface Terminal {
+  el: HTMLElement;
+  exec(line: string): void;
+  fill(text: string): void;
+  focus(): void;
+}
+
+export function createTerminal(ctx: Omit<TerminalContext, 'clear'>): Terminal {
   const root = document.createElement('div');
   root.className = 'term';
   root.dataset.label = 'Terminal';
@@ -364,7 +397,7 @@ export function createTerminal(ctx: Omit<TerminalContext, 'clear'>): HTMLElement
   prompt.textContent = PROMPT;
   const input = document.createElement('input');
   input.type = 'text';
-  input.setAttribute('aria-label', 'Befehl');
+  input.setAttribute('aria-label', t.inputLabel);
   input.autocomplete = 'off';
   input.autocapitalize = 'off';
   input.spellcheck = false;
@@ -394,7 +427,32 @@ export function createTerminal(ctx: Omit<TerminalContext, 'clear'>): HTMLElement
     clear: () => out.replaceChildren()
   };
 
-  print('Willkommen. „help“ zeigt alle Befehle.');
+  print(t.welcome);
+
+  const exec = (line: string) => {
+    const echo = document.createElement('div');
+    echo.className = 'term-row';
+    const p = document.createElement('span');
+    p.className = 'term-prompt';
+    p.textContent = PROMPT;
+    echo.append(p, ` ${line}`);
+    out.append(echo);
+    if (line.trim()) {
+      history.push(line);
+      cursor = history.length;
+    }
+    const result = run(line, full);
+    if (result instanceof Promise) {
+      const pending = print('…');
+      toBottom();
+      void result.then((rows) => {
+        pending.remove();
+        show(rows);
+      });
+    } else {
+      show(result);
+    }
+  };
 
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
@@ -407,28 +465,7 @@ export function createTerminal(ctx: Omit<TerminalContext, 'clear'>): HTMLElement
       e.preventDefault();
       const line = input.value;
       input.value = '';
-      const echo = document.createElement('div');
-      echo.className = 'term-row';
-      const p = document.createElement('span');
-      p.className = 'term-prompt';
-      p.textContent = PROMPT;
-      echo.append(p, ` ${line}`);
-      out.append(echo);
-      if (line.trim()) {
-        history.push(line);
-        cursor = history.length;
-      }
-      const result = run(line, full);
-      if (result instanceof Promise) {
-        const pending = print('…');
-        toBottom();
-        void result.then((rows) => {
-          pending.remove();
-          show(rows);
-        });
-      } else {
-        show(result);
-      }
+      exec(line);
     } else if (e.key === 'Tab') {
       e.preventDefault();
       const done = complete(input.value);
@@ -448,5 +485,16 @@ export function createTerminal(ctx: Omit<TerminalContext, 'clear'>): HTMLElement
     if (!getSelection()?.toString()) input.focus();
   });
 
-  return root;
+  return {
+    el: root,
+    exec,
+    fill(text) {
+      input.value = text;
+      input.focus({ preventScroll: true });
+    },
+    focus() {
+      input.focus({ preventScroll: true });
+      toBottom();
+    },
+  };
 }

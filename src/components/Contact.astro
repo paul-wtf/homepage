@@ -1,6 +1,11 @@
 ---
 import Email from './Email.astro';
 import { contacts, contactIcons, emailParts } from '../data/contact';
+import { toLang } from '../data/i18n';
+import { ui } from '../data/ui';
+
+const lang = toLang(Astro.currentLocale);
+const t = ui[lang];
 
 const [github, discord, youtube] = ['github', 'discord', 'youtube'].map(
   (k) => contacts.find((c) => c.kind === k)!
@@ -9,7 +14,7 @@ const email = contacts.find((c) => c.kind === 'email')!;
 const gpg = contacts.find((c) => c.kind === 'gpg')!;
 ---
 <section id="contact" data-ws="6" class="contact section-shell" data-reveal>
-  <h2 class="section-title"><span class="ws" aria-hidden="true">6</span>Kontakt</h2>
+  <h2 class="section-title"><span class="ws" aria-hidden="true">6</span>{t.sections.contact}</h2>
   <div class="grid">
 
     <a class="window window--focusable tile" href={github.href} target="_blank" rel="noopener noreferrer">
@@ -29,7 +34,7 @@ const gpg = contacts.find((c) => c.kind === 'gpg')!;
       <div>
         <span class="label">{discord.label}</span>
         <span class="value" role="status" data-discord-text>{discord.value}</span>
-        <span class="sr-only">— Benutzernamen in Zwischenablage kopieren</span>
+        <span class="sr-only">{t.contact.copyHint}</span>
       </div>
     </button>
 
@@ -43,7 +48,7 @@ const gpg = contacts.find((c) => c.kind === 'gpg')!;
       </div>
     </a>
 
-    <Email user={emailParts.user} domain={emailParts.domain} label={email.label} placeholder={email.value} />
+    <Email user={emailParts.user} domain={emailParts.domain} label={email.label} placeholder={t.contact.showEmail} hint={t.contact.mailHint} />
 
     <a class="window window--focusable tile gpg" href={gpg.href}>
       <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
@@ -52,7 +57,7 @@ const gpg = contacts.find((c) => c.kind === 'gpg')!;
       <div>
         <span class="label">{gpg.label}</span>
         <span class="value">{gpg.value}</span>
-        <span class="sr-only">— öffentlichen Schlüssel herunterladen</span>
+        <span class="sr-only">{t.contact.keyHint}</span>
       </div>
     </a>
 

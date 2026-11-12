@@ -1,10 +1,13 @@
 import { dwindle, type Rect } from './layout';
 import { initScrollFocus } from '../scroll-focus';
 import { revealEmails } from '../contact-actions';
-import { createTerminal } from './terminal';
+import { createTerminal, isCommand, launchable, type Terminal } from './terminal';
 import { createLock } from './lock';
+import { createLauncher, type LauncherEntry } from './launcher';
 import { latest } from '../live/status';
 import { markProjects } from '../live/projects';
+import { ui } from '../../data/ui';
+import { lang } from '../lang';
 
 export interface DesktopApi {
   enter(ws?: number): void;
@@ -32,6 +35,10 @@ const STAGGER = 55;
 const POP_DELAY = 140;
 const SLIDE_MS = 420;
 const CLOSE_MS = 180;
+const OVERVIEW_COLS = 3;
+const OVERVIEW_LABEL = 34;
+// Hyprland's default special_scale_factor of 1 would cover the workspace below.
+const SCRATCH_SCALE = 0.8;
 const MODE_KEY = 'paulwtf:mode';
 const SEEN_KEY = 'paulwtf:keybinds-seen';
 const INTERACTIVE = 'button, a, input, textarea, select, [contenteditable]';
@@ -70,6 +77,7 @@ export function initDesktop(): DesktopApi {
   const main = document.querySelector<HTMLElement>('main');
   const toggle = document.querySelector<HTMLButtonElement>('#desktop-toggle');
   const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('#top-nav a[data-section]'));
+  const strings = ui[lang];
   const media = matchMedia(QUALIFIES);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const ms = (n: number) => (reduced.matches ? 0 : n);
@@ -79,10 +87,24 @@ export function initDesktop(): DesktopApi {
   let spaces: Workspace[] = [];
   let keybindsShown = false;
   let clearTimer = 0;
+  let overview = false;
+  let overviewTimer = 0;
+  let cells: HTMLButtonElement[] = [];
+  let scratch: Workspace | null = null;
+  let scratchOn = false;
+  let scratchTimer = 0;
+  const overviewEl = document.createElement('div');
+  overviewEl.className = 'wm-overview';
+  overviewEl.setAttribute('role', 'group');
+  overviewEl.setAttribute('aria-label', strings.desktop.overview);
+  overviewEl.hidden = true;
   let stopScrollFocus: (() => void) | null = initScrollFocus();
   const lock = createLock();
+  const terminals = new Map<HTMLElement, Terminal>();
+  const launcher = createLauncher(launcherEntries, typedLine);
 
   const ws = (n: number): Workspace | undefined => spaces[n - 1];
+  const active = (): Workspace | undefined => (scratchOn && scratch ? scratch : ws(cur));
 
   function makeWindow(content: Node, label: string): HTMLElement {
     const el = document.createElement('div');
@@ -106,8 +128,15 @@ export function initDesktop(): DesktopApi {
     return el;
   }
 
+  function fromTemplate(t: HTMLTemplateElement): HTMLElement {
+    const el = makeWindow(t.content.cloneNode(true), t.dataset.label ?? '');
+    el.dataset.path = t.dataset.path ?? '';
+    return el;
+  }
+
   function build(): void {
     spaces = [];
+    terminals.clear();
     const layers: HTMLElement[] = [];
     for (let n = 1; n <= WORKSPACES; n++) {
       const layer = document.createElement('div');
@@ -119,11 +148,32 @@ export function initDesktop(): DesktopApi {
     for (const t of document.querySelectorAll<HTMLTemplateElement>('template[data-window]')) {
       const space = ws(Number(t.dataset.ws));
       if (!space) continue;
-      const el = makeWindow(t.content.cloneNode(true), t.dataset.label ?? '');
+      const el = fromTemplate(t);
       space.wins.push(el);
       space.layer.append(el);
     }
-    wm.replaceChildren(...layers);
+    cells = links.map((a, i) => {
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'wm-cell';
+      cell.dataset.ws = String(i + 1);
+      const label = document.createElement('span');
+      label.className = 'wm-cell-label';
+      label.textContent = `${i + 1} ${a.querySelector('.label')?.textContent ?? ''}`;
+      cell.append(label);
+      cell.addEventListener('click', () => closeOverview(i + 1));
+      return cell;
+    });
+    overviewEl.replaceChildren(...cells);
+    overviewEl.hidden = true;
+    const special = document.createElement('div');
+    special.className = 'wm-layer wm-scratch is-parked';
+    special.addEventListener('pointerdown', (e) => {
+      if (e.target === special) hideScratch();
+    });
+    scratch = { layer: special, wins: [], focus: null, full: null };
+    scratchOn = false;
+    wm.replaceChildren(...layers, special, overviewEl);
   }
 
   function outerArea(): { outer: Rect; gapIn: number } {
@@ -140,14 +190,16 @@ export function initDesktop(): DesktopApi {
     };
   }
 
-  function layout(n: number): void {
-    const space = ws(n);
+  function layout(space: Workspace | undefined): void {
     if (!space) return;
     const { outer, gapIn } = outerArea();
-    const rects = dwindle(outer, space.wins.length, gapIn);
+    const w = outer.w * SCRATCH_SCALE;
+    const h = outer.h * SCRATCH_SCALE;
+    const area = space === scratch ? { x: outer.x + (outer.w - w) / 2, y: outer.y + (outer.h - h) / 2, w, h } : outer;
+    const rects = dwindle(area, space.wins.length, gapIn);
     space.wins.forEach((el, i) => {
       const full = space.full === el;
-      const r = full ? outer : rects[i];
+      const r = full ? area : rects[i];
       el.classList.toggle('is-full', full);
       el.style.left = `${r.x}px`;
       el.style.top = `${r.y}px`;
@@ -156,8 +208,185 @@ export function initDesktop(): DesktopApi {
     });
   }
 
-  function setFocus(el: HTMLElement | null | undefined, moveDom = true): void {
+  function overviewGrid(): { scale: number; at(i: number): { x: number; y: number } } {
+    const { outer, gapIn } = outerArea();
+    const rows = Math.ceil(WORKSPACES / OVERVIEW_COLS);
+    const gap = gapIn * 2;
+    const W = wm.clientWidth;
+    const H = wm.clientHeight;
+    const scale = Math.min(
+      (outer.w - (OVERVIEW_COLS - 1) * gap) / (OVERVIEW_COLS * W),
+      (outer.h - (rows - 1) * gap - rows * OVERVIEW_LABEL) / (rows * H)
+    );
+    const w = W * scale;
+    const h = H * scale + OVERVIEW_LABEL;
+    const left = (W - OVERVIEW_COLS * w - (OVERVIEW_COLS - 1) * gap) / 2;
+    const top = (H - rows * h - (rows - 1) * gap) / 2;
+    return {
+      scale,
+      at: (i) => ({ x: left + (i % OVERVIEW_COLS) * (w + gap), y: top + Math.floor(i / OVERVIEW_COLS) * (h + gap) }),
+    };
+  }
+
+  // Every layer keeps its size and is scaled into its cell. Zoomed on a cell, that layer fills
+  // the screen again and the others lie outside of it, so opening and closing is one zoom.
+  function placeOverview(zoomOn: number | null): void {
+    const grid = overviewGrid();
+    const origin = zoomOn === null ? null : grid.at(zoomOn - 1);
+    wm.style.setProperty('--overview-scale', String(grid.scale));
+    wm.style.setProperty('--overview-label', `${OVERVIEW_LABEL}px`);
+    spaces.forEach((space, i) => {
+      const { x, y } = grid.at(i);
+      space.layer.style.transform = origin
+        ? `translate(${(x - origin.x) / grid.scale}px, ${(y - origin.y) / grid.scale}px)`
+        : `translate(${x}px, ${y}px) scale(${grid.scale})`;
+      const cell = cells[i];
+      if (!cell) return;
+      cell.style.left = `${x}px`;
+      cell.style.top = `${y}px`;
+      cell.style.width = `${wm.clientWidth * grid.scale}px`;
+      cell.style.height = `${wm.clientHeight * grid.scale + OVERVIEW_LABEL}px`;
+    });
+  }
+
+  function openOverview(): void {
+    if (!on || overview) return;
+    hideScratch();
+    clearTimeout(overviewTimer);
+    overview = true;
+    spaces.forEach((space, i) => {
+      layout(space);
+      space.layer.style.transition = 'none';
+      space.layer.classList.remove('is-parked');
+      space.layer.inert = true;
+      cells[i]?.classList.toggle('is-empty', space.wins.length === 0);
+      space.layer.classList.toggle('is-empty', space.wins.length === 0);
+      if (i + 1 === cur) cells[i]?.setAttribute('aria-current', 'true');
+      else cells[i]?.removeAttribute('aria-current');
+    });
+    placeOverview(cur);
+    void wm.offsetWidth;
+    for (const space of spaces) space.layer.style.transition = '';
+    placeOverview(null);
+    wm.classList.add('is-overview');
+    overviewEl.hidden = false;
+    cells[cur - 1]?.focus({ preventScroll: true });
+  }
+
+  function closeOverview(n = cur): void {
+    if (!overview || !ws(n)) return;
+    overview = false;
+    cur = n;
+    wm.classList.remove('is-overview');
+    overviewEl.hidden = true;
+    for (const space of spaces) space.layer.inert = false;
+    placeOverview(n);
+    const settle = () => {
+      if (overview) return;
+      spaces.forEach((space, i) => {
+        space.layer.style.transition = 'none';
+        space.layer.style.transform = '';
+        space.layer.classList.toggle('is-parked', i + 1 !== cur);
+        space.layer.classList.remove('is-empty');
+        void space.layer.offsetWidth;
+        space.layer.style.transition = '';
+      });
+    };
+    if (ms(SLIDE_MS) === 0) settle();
+    else overviewTimer = window.setTimeout(settle, SLIDE_MS);
     const space = ws(cur);
+    setFocus(space?.focus ?? space?.wins[0]);
+    refreshBar();
+  }
+
+  function moveCell(dx: number, dy: number): void {
+    const i = cells.indexOf(document.activeElement as HTMLButtonElement);
+    if (i < 0) {
+      cells[cur - 1]?.focus({ preventScroll: true });
+      return;
+    }
+    const col = (i % OVERVIEW_COLS) + dx;
+    const next = i + dx + dy * OVERVIEW_COLS;
+    if (col < 0 || col >= OVERVIEW_COLS || !cells[next]) return;
+    cells[next].focus({ preventScroll: true });
+  }
+
+  function findTerminal(): { win: HTMLElement; from: Workspace } | null {
+    const here = ws(cur);
+    const order = here ? [here, ...spaces.filter((space) => space !== here)] : spaces;
+    for (const from of order) {
+      const open = from.wins.filter((w) => terminals.has(w));
+      const win = open.find((w) => w === from.focus) ?? open[open.length - 1];
+      if (win) return { win, from };
+    }
+    return null;
+  }
+
+  function moveWindow(win: HTMLElement, from: Workspace, to: Workspace): void {
+    const i = from.wins.indexOf(win);
+    from.wins.splice(i, 1);
+    if (from.full === win) from.full = null;
+    if (from.focus === win) from.focus = from.wins[Math.max(0, i - 1)] ?? null;
+    win.classList.remove('is-focus', 'is-full', 'is-pre');
+    to.full = null;
+    to.wins.push(win);
+    to.layer.append(win);
+    to.focus = win;
+    layout(from);
+    layout(to);
+    refreshBar();
+  }
+
+  function showScratch(): void {
+    if (!on || overview || scratchOn || !scratch) return;
+    clearTimeout(scratchTimer);
+    scratchOn = true;
+    for (const w of ws(cur)?.wins ?? []) w.classList.remove('is-focus');
+    for (const space of spaces) space.layer.inert = true;
+    html.classList.add('scratch-on');
+
+    const { layer } = scratch;
+    layout(scratch);
+    layer.style.transition = 'none';
+    layer.style.transform = 'translateY(-100%)';
+    layer.classList.remove('is-parked');
+    void layer.offsetWidth;
+    layer.style.transition = '';
+    layer.style.transform = '';
+
+    if (!scratch.wins.some((w) => terminals.has(w))) {
+      const found = findTerminal();
+      if (found) moveWindow(found.win, found.from, scratch);
+      else openTerminal();
+    }
+    const win = scratch.focus ?? scratch.wins[0];
+    setFocus(win);
+    if (win) terminals.get(win)?.focus();
+  }
+
+  function hideScratch(): void {
+    if (!scratchOn || !scratch) return;
+    scratchOn = false;
+    html.classList.remove('scratch-on');
+    for (const space of spaces) space.layer.inert = false;
+    const { layer } = scratch;
+    layer.style.transform = 'translateY(-100%)';
+    const park = () => {
+      if (scratchOn) return;
+      layer.classList.add('is-parked');
+      layer.style.transform = '';
+    };
+    if (ms(SLIDE_MS) === 0) park();
+    else scratchTimer = window.setTimeout(park, SLIDE_MS);
+    if (document.activeElement instanceof HTMLElement && layer.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+    const below = ws(cur);
+    setFocus(below?.focus ?? below?.wins[0]);
+  }
+
+  function setFocus(el: HTMLElement | null | undefined, moveDom = true): void {
+    const space = active();
     if (!on || !el || !space?.wins.includes(el)) return;
     space.focus = el;
     for (const w of space.wins) w.classList.toggle('is-focus', w === el);
@@ -229,7 +458,7 @@ export function initDesktop(): DesktopApi {
     keybindsShown = true;
     writeStore(SEEN_KEY, '1');
 
-    layout(cur);
+    layout(space);
     popIn(space.wins, POP_DELAY);
     setFocus(space.focus ?? space.wins[0]);
     refreshBar();
@@ -239,6 +468,14 @@ export function initDesktop(): DesktopApi {
   function leave(remember = true): void {
     if (!on) return;
     on = false;
+    overview = false;
+    scratchOn = false;
+    clearTimeout(overviewTimer);
+    clearTimeout(scratchTimer);
+    wm.classList.remove('is-overview');
+    html.classList.remove('scratch-on');
+    overviewEl.hidden = true;
+    launcher.close();
     lock.disarm();
     if (remember) writeStore(MODE_KEY, 'scroll');
     for (const el of ws(cur)?.wins ?? []) el.classList.add('is-pre');
@@ -260,6 +497,11 @@ export function initDesktop(): DesktopApi {
   }
 
   function go(n: number): void {
+    if (overview) {
+      closeOverview(n);
+      return;
+    }
+    hideScratch();
     const from = ws(cur);
     const to = ws(n);
     if (!on || n === cur || !from || !to) return;
@@ -267,7 +509,7 @@ export function initDesktop(): DesktopApi {
     const prev = cur;
     cur = n;
 
-    layout(n);
+    layout(to);
     to.layer.style.transition = 'none';
     to.layer.style.transform = `translateX(${dir * 100}%)`;
     to.layer.classList.remove('is-parked');
@@ -288,23 +530,28 @@ export function initDesktop(): DesktopApi {
   }
 
   function add(el: HTMLElement, focus = true): void {
-    const space = ws(cur);
+    const space = active();
     if (!space) return;
     space.full = null;
     space.wins.push(el);
     space.layer.append(el);
-    layout(cur);
+    layout(space);
     popIn([el], 20);
     if (focus) setFocus(el);
     refreshBar();
   }
 
-  function openPhoto(cat: string): void {
+  function openPhoto(cat: string, focus = false): void {
     const t = document.querySelector<HTMLTemplateElement>(`template[data-cat="${CSS.escape(cat)}"]`);
-    if (!on || !t || ws(cur)?.wins.some((w) => w.dataset.cat === cat)) return;
-    const el = makeWindow(t.content.cloneNode(true), t.dataset.label ?? '');
+    if (!on || !t) return;
+    const open = active()?.wins.find((w) => w.dataset.cat === cat);
+    if (open) {
+      if (focus) setFocus(open);
+      return;
+    }
+    const el = fromTemplate(t);
     el.dataset.cat = cat;
-    add(el, false);
+    add(el, focus);
   }
 
   function openWindow(content: HTMLElement): void {
@@ -312,7 +559,7 @@ export function initDesktop(): DesktopApi {
     if (on) add(makeWindow(content, content.dataset.label ?? ''));
   }
 
-  function openTerminal(): void {
+  function openTerminal(): Terminal | null {
     let win: HTMLElement | null = null;
     const term = createTerminal({
       go,
@@ -321,12 +568,86 @@ export function initDesktop(): DesktopApi {
       open: (url) => window.open(url, '_blank', 'noopener,noreferrer'),
       photo: openPhoto,
     });
-    openWindow(term);
-    win = term.closest<HTMLElement>('.wm-window');
+    openWindow(term.el);
+    win = term.el.closest<HTMLElement>('.wm-window');
+    if (!win) return null;
+    terminals.set(win, term);
+    return term;
+  }
+
+  function runInTerminal(line: string, complete: boolean): void {
+    const space = active();
+    const open = space?.wins.filter((w) => terminals.has(w)) ?? [];
+    const win = open.find((w) => w === space?.focus) ?? open[open.length - 1];
+    const term = win ? terminals.get(win) : openTerminal();
+    if (!term) return;
+    if (win) setFocus(win);
+    term.focus();
+    if (complete) term.exec(line);
+    else term.fill(line);
+  }
+
+  function showWindow(t: HTMLTemplateElement): void {
+    const n = Number(t.dataset.ws);
+    go(n);
+    const space = ws(cur);
+    if (!space || cur !== n) return;
+    const open = space.wins.find((w) => w.dataset.path === t.dataset.path);
+    if (!open) {
+      add(fromTemplate(t));
+      return;
+    }
+    if (space.full && space.full !== open) {
+      space.full = null;
+      layout(space);
+    }
+    setFocus(open);
+  }
+
+  function launcherEntries(): LauncherEntry[] {
+    const kind = strings.launcher;
+    const entries: LauncherEntry[] = links.map((a, i) => ({
+      label: `${i + 1} ${a.querySelector('.label')?.textContent ?? ''}`,
+      kind: kind.workspace,
+      run: () => go(i + 1),
+    }));
+    for (const tpl of document.querySelectorAll<HTMLTemplateElement>('template[data-window]')) {
+      entries.push({ label: tpl.dataset.label ?? '', detail: tpl.dataset.path, kind: kind.window, run: () => showWindow(tpl) });
+    }
+    for (const tpl of document.querySelectorAll<HTMLTemplateElement>('template[data-cat]')) {
+      entries.push({
+        label: tpl.dataset.label ?? '',
+        detail: tpl.dataset.path,
+        kind: kind.window,
+        run: () => {
+          go(Number(tpl.dataset.ws));
+          openPhoto(tpl.dataset.cat ?? '', true);
+        },
+      });
+    }
+    const keybinds = document.querySelector<HTMLTemplateElement>('template[data-keybinds]');
+    if (keybinds) {
+      entries.push({ label: keybinds.dataset.label ?? '', detail: keybinds.dataset.path, kind: kind.window, run: openKeybinds });
+    }
+    for (const c of launchable) {
+      entries.push({ label: c.usage, detail: c.description, kind: kind.command, run: () => runInTerminal(c.line, c.complete) });
+    }
+    entries.push(
+      { label: kind.leave, kind: kind.action, run: () => leave() },
+      { label: kind.lock, kind: kind.action, run: () => lock.now() }
+    );
+    return entries;
+  }
+
+  function typedLine(query: string): LauncherEntry | null {
+    const words = query.trim().split(/\s+/);
+    if (words.length < 2 || !isCommand(words[0])) return null;
+    const line = words.join(' ');
+    return { label: line, kind: strings.launcher.command, run: () => runInTerminal(line, true) };
   }
 
   function openKeybinds(): void {
-    const open = ws(cur)?.wins.find((w) => w.dataset.keybinds !== undefined);
+    const open = active()?.wins.find((w) => w.dataset.keybinds !== undefined);
     if (open) setFocus(open);
     else {
       const kb = keybindsWindow();
@@ -335,33 +656,35 @@ export function initDesktop(): DesktopApi {
   }
 
   function closeWindow(el: HTMLElement): void {
-    const space = ws(cur);
-    const i = space?.wins.indexOf(el) ?? -1;
-    if (!on || !space || i < 0) return;
+    const space = [...spaces, ...(scratch ? [scratch] : [])].find((sp) => sp.wins.includes(el));
+    if (!on || !space) return;
+    const i = space.wins.indexOf(el);
     const wasFocus = space.focus === el;
     space.wins.splice(i, 1);
+    terminals.delete(el);
     if (space.full === el) space.full = null;
     el.classList.remove('is-focus');
     el.classList.add('is-closing');
     setTimeout(() => el.remove(), ms(CLOSE_MS));
-    layout(cur);
+    layout(space);
     if (wasFocus) {
-      space.focus = null;
-      setFocus(space.wins[Math.max(0, i - 1)]);
+      space.focus = space.wins[Math.max(0, i - 1)] ?? null;
+      if (space === active()) setFocus(space.focus);
     }
+    if (space === scratch && space.wins.length === 0) hideScratch();
     refreshBar();
   }
 
   function closeFocused(): void {
-    const el = ws(cur)?.focus;
+    const el = active()?.focus;
     if (el) closeWindow(el);
   }
 
   function toggleFull(): void {
-    const space = ws(cur);
+    const space = active();
     if (!space?.focus) return;
     space.full = space.full === space.focus ? null : space.focus;
-    layout(cur);
+    layout(space);
   }
 
   function center(el: HTMLElement): { x: number; y: number } {
@@ -369,7 +692,7 @@ export function initDesktop(): DesktopApi {
   }
 
   function moveFocus(dx: number, dy: number): void {
-    const space = ws(cur);
+    const space = active();
     if (!space) return;
     if (!space.focus) {
       setFocus(space.wins[0]);
@@ -413,8 +736,22 @@ export function initDesktop(): DesktopApi {
       return;
     } else if (/^[1-6]$/.test(k)) {
       go(Number(k));
+    } else if (k === 'tab') {
+      if (e.shiftKey || (!overview && (e.target as Element | null)?.closest?.(INTERACTIVE))) return;
+      if (overview) closeOverview();
+      else openOverview();
+    } else if (overview) {
+      if (k === 'escape') closeOverview();
+      else if (directions[k]) moveCell(...directions[k]);
+      else if (k !== 'enter' || !e.shiftKey) return;
+    } else if (k === 's') {
+      if (scratchOn) hideScratch();
+      else showScratch();
     } else if (k === 'escape') {
-      leave();
+      if (scratchOn) hideScratch();
+      else leave();
+    } else if (k === 'enter' && e.shiftKey) {
+      if (!e.repeat) launcher.open();
     } else if (k === 'enter') {
       if ((e.target as Element | null)?.closest?.(INTERACTIVE)) return;
       if (!e.repeat) openTerminal();
@@ -446,7 +783,14 @@ export function initDesktop(): DesktopApi {
   });
 
   new ResizeObserver(() => {
-    if (on) layout(cur);
+    if (!on) return;
+    layout(scratch ?? undefined);
+    if (!overview) {
+      layout(ws(cur));
+      return;
+    }
+    spaces.forEach(layout);
+    placeOverview(null);
   }).observe(wm);
 
   const sync = () => {

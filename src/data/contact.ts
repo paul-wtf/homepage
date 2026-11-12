@@ -1,7 +1,8 @@
 export interface ContactEntry {
   kind: 'github' | 'discord' | 'youtube' | 'email' | 'gpg';
   label: string;
-  value: string;
+  /** Missing for the address, which only the script puts together. */
+  value?: string;
   href?: string;
 }
 
@@ -11,7 +12,7 @@ export const contacts: ContactEntry[] = [
   { kind: 'github', label: 'GitHub', value: 'paul-wtf', href: 'https://github.com/paul-wtf' },
   { kind: 'discord', label: 'Discord', value: 'paul.wtf' },
   { kind: 'youtube', label: 'YouTube', value: '@spotifynutzer', href: 'https://www.youtube.com/@spotifynutzer' },
-  { kind: 'email', label: 'Email', value: '(Email anzeigen)' },
+  { kind: 'email', label: 'Email' },
   { kind: 'gpg', label: 'GPG', value: '01E8 E083 5EEF 6EB9 294C C853 A866 63FE 8C6B 0713', href: '/pubkey.asc' }
 ];
 

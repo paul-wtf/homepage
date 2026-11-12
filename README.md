@@ -1,6 +1,6 @@
 # homepage
 
-Personal homepage for [paul.wtf](https://paul.wtf). German, dark-only, styled after the »zen« variant of my quickshell/Hyprland desktop theme ([dotfiles](https://github.com/paul-wtf/dotfiles)): opaque Catppuccin-Mocha surfaces, zero borders, teal accent, JetBrains Mono, the desktop's screen frame with concave viewport corners, and the nav as a numbered workspace switcher.
+Personal homepage for [paul.wtf](https://paul.wtf). German and English, dark-only, styled after the »zen« variant of my quickshell/Hyprland desktop theme ([dotfiles](https://github.com/paul-wtf/dotfiles)): opaque Catppuccin-Mocha surfaces, zero borders, teal accent, JetBrains Mono, the desktop's screen frame with concave viewport corners, and the nav as a numbered workspace switcher.
 
 ## Stack
 
@@ -18,6 +18,12 @@ pnpm astro check  # type-check
 pnpm build        # outputs dist/
 pnpm preview      # serves dist/ locally
 ```
+
+### Languages
+
+German is served at `/`, English at `/en` and `/en/404`. Both are built from the same components. Every text lives in `src/data/`: content as a field with a `de` and an `en` value, interface strings in the dictionary `src/data/ui.ts`. The terminal reads the same files, so a text changes in one place for the page, the desktop windows and the commands. `tests/e2e/i18n.spec.ts` fails when a text or a key exists in only one language.
+
+The page never redirects by browser language. Mode and theme are stored per origin and therefore apply to both languages. `nginx.conf` serves `/en` and `/en/404` without a redirect and answers unknown paths below `/en/` with the English 404 page.
 
 ### Project data from GitHub
 
@@ -62,8 +68,10 @@ The fingerprint in `src/data/contact.ts` belongs to the primary key. `tests/e2e/
 ### Regenerate the OG image
 
 ```bash
-node scripts/generate-og.mjs            # writes public/og-image.png
+node scripts/generate-og.mjs            # writes public/og-image.png and og-image-en.png
 ```
+
+The script asks for JetBrains Mono and falls back to DejaVu Sans Mono when fontconfig does not find it.
 
 ## Build & run container locally
 

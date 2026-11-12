@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { DEFAULT_LANG, type Lang } from './i18n';
 import { projects } from './projects';
 
 export interface RepoMeta {
@@ -73,13 +74,14 @@ export function projectMeta(): Promise<Record<string, RepoMeta>> {
   return (cached ??= load());
 }
 
-const date = new Intl.DateTimeFormat('de-DE', {
+const parts = new Intl.DateTimeFormat('en-GB', {
   day: '2-digit',
   month: '2-digit',
   year: 'numeric',
   timeZone: 'Europe/Berlin',
 });
 
-export function commitDate(iso: string): string {
-  return date.format(new Date(iso));
+export function commitDate(iso: string, lang: Lang = DEFAULT_LANG): string {
+  const p = Object.fromEntries(parts.formatToParts(new Date(iso)).map(({ type, value }) => [type, value]));
+  return lang === 'de' ? `${p.day}.${p.month}.${p.year}` : `${p.year}-${p.month}-${p.day}`;
 }

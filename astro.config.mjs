@@ -10,5 +10,14 @@ export default defineConfig({
     inlineStylesheets: 'auto'
   },
   compressHTML: true,
-  integrations: [sitemap()]
+  i18n: {
+    locales: ['de', 'en'],
+    defaultLocale: 'de'
+  },
+  integrations: [
+    sitemap({
+      filter: (page) => !/\/404\/?$/.test(page),
+      i18n: { defaultLocale: 'de', locales: { de: 'de', en: 'en' } }
+    })
+  ]
 });

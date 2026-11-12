@@ -67,6 +67,16 @@ test.describe('live badge', () => {
     await expect(badge(page, 'linkhop')).not.toHaveAttribute('data-state');
   });
 
+  test('an answer that arrives before the badge script still marks the badges', async ({ page }) => {
+    await mockStatus(page, status({ projects: { linkhop: 'up', tidalwave: 'down' } }));
+    await page.route('**/_astro/projects.*.js', async (route) => {
+      await new Promise((done) => setTimeout(done, 600));
+      await route.continue();
+    });
+    await page.goto('/');
+    await expect(badge(page, 'tidalwave')).toHaveAttribute('data-state', 'down');
+  });
+
   test('desktop windows show the same state', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('paulwtf:keybinds-seen', '1'));
     await page.emulateMedia({ reducedMotion: 'reduce' });

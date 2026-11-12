@@ -1,3 +1,5 @@
+import type { Localized } from './i18n';
+
 export interface HardwareCategory {
   label: string;
   items: string[];
@@ -45,13 +47,30 @@ export const workstation: HardwareCategory[] = [
 export const laptop: string =
   'MacBook Pro 14,2" (M4 Pro) · 12-core CPU / 16-core GPU · 24 GB RAM · 512 GB SSD';
 
-export const server = {
-  hostingNote: 'Hosted bei TubeHosting',
-  lines: [
-    'Ryzen 9 7950X3D · 192 GB RAM',
-    '2× 512 GB NVMe (RAID 1, Proxmox-Boot)',
-    '2× 4 TB NVMe (RAID 1, VM-Storage)',
-    '4× 16 TB HDD (RAID 10, Bulk-Storage)',
-    'Uplink: 2× 10 GbE LACP-Bond'
-  ]
+export interface Server {
+  hostingNote: string;
+  lines: string[];
+}
+
+export const server: Localized<Server> = {
+  de: {
+    hostingNote: 'Hosted bei TubeHosting',
+    lines: [
+      'Ryzen 9 7950X3D · 192 GB RAM',
+      '2× 512 GB NVMe (RAID 1, Proxmox-Boot)',
+      '2× 4 TB NVMe (RAID 1, VM-Storage)',
+      '4× 16 TB HDD (RAID 10, Bulk-Storage)',
+      'Uplink: 2× 10 GbE LACP-Bond'
+    ]
+  },
+  en: {
+    hostingNote: 'Hosted at TubeHosting',
+    lines: [
+      'Ryzen 9 7950X3D · 192 GB RAM',
+      '2× 512 GB NVMe (RAID 1, Proxmox boot)',
+      '2× 4 TB NVMe (RAID 1, VM storage)',
+      '4× 16 TB HDD (RAID 10, bulk storage)',
+      'Uplink: 2× 10 GbE LACP bond'
+    ]
+  }
 };

@@ -120,7 +120,7 @@ test.describe('english scroll page', () => {
     await page.locator('[data-live="music"]').click();
     await expect(pop).toHaveAttribute('aria-label', 'Music');
     await expect(pop).toContainText('playing now');
-    await expect(pop.locator('a')).toHaveText('on last.fm ↗');
+    await expect(pop.locator('a')).toHaveText(['on last.fm ↗', 'open in your service ↗']);
     await expect(pop.locator('img')).toHaveAttribute('alt', 'Album cover: Album');
     await page.locator('[data-live="server"]').click();
     await expect(pop).toContainText('memory');

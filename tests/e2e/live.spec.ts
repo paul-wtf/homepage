@@ -95,6 +95,18 @@ test.describe('live bar', () => {
     await expect(music).toBeFocused();
   });
 
+  test('the music popout links to linkhop', async ({ page }) => {
+    await mock(page, status({ music: { ...status().music, track: 'Songs für Liam', artist: 'Kraftklub', url: null } }));
+    await page.goto('/');
+    await widget(page, 'music').click();
+    const link = popout(page).locator('a[href^="https://linkhop.paul.wtf/"]');
+    await expect(link).toHaveAttribute('href', 'https://linkhop.paul.wtf/?q=Kraftklub%20Songs%20f%C3%BCr%20Liam');
+    await expect(link).toHaveText('in deinem Dienst öffnen ↗');
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', /noopener/);
+    await expect(popout(page).locator('a')).toHaveCount(1);
+  });
+
   test('popout closes on a click outside and shows server details', async ({ page }) => {
     await mock(page);
     await page.goto('/');
@@ -210,7 +222,8 @@ test.describe('live bar', () => {
     await page.goto('/');
     await widget(page, 'music').click();
     await expect(popout(page)).toContainText('spielt gerade');
-    await expect(popout(page).locator('a')).toHaveCount(0);
+    await expect(popout(page).locator('a')).toHaveCount(1);
+    await expect(popout(page).locator('a')).toHaveAttribute('href', /^https:\/\/linkhop\.paul\.wtf\//);
     await expect(popout(page).locator('img')).toHaveCount(0);
   });
 

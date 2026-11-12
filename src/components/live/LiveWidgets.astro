@@ -145,6 +145,7 @@
     color: var(--subtext1);
   }
   .popout :global(a:hover) { color: var(--text); }
+  .popout :global(a + a) { margin-left: 0.9rem; }
 
   .popout :global(dl) {
     display: grid;
@@ -274,6 +275,7 @@
   import { lang } from '../../scripts/lang';
 
   const t = ui[lang].live;
+  const LINKHOP = 'https://linkhop.paul.wtf/';
 
   type Name = 'music' | 'server' | 'weather';
 
@@ -384,13 +386,15 @@
       text.append(el('p', m.track, 'pop-title'), el('p', m.artist));
       if (m.album) text.append(el('p', m.album, 'muted'));
       text.append(el('p', m.state === 'playing' ? t.playing : ago(m.played_at), 'muted'));
-      if (m.url) {
-        const a = el('a', t.lastfm);
-        a.href = m.url;
+      const link = (label: string, href: string) => {
+        const a = el('a', label);
+        a.href = href;
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
         text.append(a);
-      }
+      };
+      if (m.url) link(t.lastfm, m.url);
+      link(t.linkhop, `${LINKHOP}?q=${encodeURIComponent(`${m.artist} ${m.track}`)}`);
       box.append(text);
       return box;
     }

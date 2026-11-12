@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
-import sharp from 'sharp';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { writePreview } from './lib/write-preview.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const assets = resolve(__dirname, '..', 'src', 'assets');
@@ -31,11 +31,11 @@ try {
     const out = resolve(assets, `${name}-preview.webp`);
     const page = await context.newPage();
     try {
-      await page.goto(url, { waitUntil: 'networkidle' });
+      const res = await page.goto(url, { waitUntil: 'networkidle' });
+      if (!res?.ok()) throw new Error(`${url} answered ${res?.status() ?? 'nothing'}`);
       await page.waitForTimeout(800);
       const png = await page.screenshot({ type: 'png', fullPage: false });
-      await sharp(png).webp({ quality: 82 }).toFile(out);
-      console.log('Wrote', out);
+      console.log((await writePreview(png, out)) ? 'Wrote' : 'Unchanged', out);
     } finally {
       await page.close();
     }

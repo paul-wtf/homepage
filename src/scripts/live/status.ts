@@ -23,10 +23,13 @@ export interface Weather {
   wind_kmh: number;
 }
 
+export type ProjectState = 'up' | 'down';
+
 export interface Status {
   music: Music | null;
   server: Server | null;
   weather: Weather | null;
+  projects: Record<string, ProjectState> | null;
   generated_at: string;
 }
 
@@ -80,12 +83,19 @@ function weather(v: unknown): Weather | null {
   return { temp_c: v.temp_c, code: v.code, is_day: v.is_day !== false, wind_kmh: v.wind_kmh };
 }
 
+function projects(v: unknown): Record<string, ProjectState> | null {
+  if (!isObj(v)) return null;
+  const known = Object.entries(v).filter((e): e is [string, ProjectState] => e[1] === 'up' || e[1] === 'down');
+  return known.length ? Object.fromEntries(known) : null;
+}
+
 function parse(v: unknown): Status {
   if (!isObj(v)) throw new TypeError('status is not an object');
   return {
     music: music(v.music),
     server: server(v.server),
     weather: weather(v.weather),
+    projects: projects(v.projects),
     generated_at: isStr(v.generated_at) ? v.generated_at : '',
   };
 }

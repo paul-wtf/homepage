@@ -10,7 +10,8 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN pnpm build
+RUN --mount=type=secret,id=github_token \
+    GITHUB_TOKEN="$(cat /run/secrets/github_token 2>/dev/null || true)" pnpm build
 
 # ---------- Stage 2: serve ----------
 FROM nginxinc/nginx-unprivileged:alpine-slim

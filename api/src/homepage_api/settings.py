@@ -9,3 +9,7 @@ class Settings(BaseSettings):
     prometheus_url: str = "http://monitoring-kube-prometheus-prometheus.monitoring:9090"
     weather_lat: float | None = 48.1271
     weather_lon: float | None = 12.3827
+    project_urls: dict[str, str] = {
+        "linkhop": "https://linkhop.paul.wtf",
+        "tidalwave": "https://tidalwave.paul.wtf",
+    }

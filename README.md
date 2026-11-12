@@ -1,10 +1,10 @@
 # homepage
 
-Personal homepage for [paul.wtf](https://paul.wtf). German, dark-only, styled after the »zen« variant of my quickshell/Hyprland desktop theme ([dotfiles](https://github.com/SpotifyNutzeer/dotfiles)): opaque Catppuccin-Mocha surfaces, zero borders, teal accent, JetBrains Mono, the desktop's screen frame with concave viewport corners, and the nav as a numbered workspace switcher.
+Personal homepage for [paul.wtf](https://paul.wtf). German, dark-only, styled after the »zen« variant of my quickshell/Hyprland desktop theme ([dotfiles](https://github.com/paul-wtf/dotfiles)): opaque Catppuccin-Mocha surfaces, zero borders, teal accent, JetBrains Mono, the desktop's screen frame with concave viewport corners, and the nav as a numbered workspace switcher.
 
 ## Stack
 
-Astro 5 (static), TypeScript, Vanilla JS for the small interactive bits (mailto and Discord click-to-copy). nginx for serving, plain Kubernetes manifests for deployment.
+Astro 7 (static), TypeScript, Vanilla JS for the interactive bits (desktop mode, terminal, live bar). nginx for serving, plain Kubernetes manifests for deployment.
 
 Design spec: [`docs/superpowers/specs/2026-05-03-homepage-design.md`](docs/superpowers/specs/2026-05-03-homepage-design.md)
 Implementation plan: [`docs/superpowers/plans/2026-05-03-homepage.md`](docs/superpowers/plans/2026-05-03-homepage.md)
@@ -18,6 +18,15 @@ pnpm astro check  # type-check
 pnpm build        # outputs dist/
 pnpm preview      # serves dist/ locally
 ```
+
+### Project data from GitHub
+
+`astro build` asks the GitHub API for the latest release tag and the date of the last commit of every project and renders them on the cards. A request that fails or runs into the rate limit leaves those fields out; the build still succeeds. Two environment variables change this:
+
+| Variable | Purpose |
+| --- | --- |
+| `GITHUB_TOKEN` | Sent as a bearer token, which lifts the limit of 60 unauthenticated requests per hour. The release workflow passes it to the image build as the secret `github_token`. |
+| `PROJECT_META_FILE` | Path to a JSON file used in place of the API (`{"<project name>": {"release": "…", "lastCommit": "…"}}`). The e2e tests and CI build with `tests/fixtures/project-meta.json` so they never touch the network. |
 
 ### Regenerate the project previews
 
@@ -38,6 +47,18 @@ BROWSER_BIN=$(which brave) pnpm capture-previews         # -> linkhop-preview.we
 TW_URL=http://localhost:4319 BROWSER_BIN=$(which brave) pnpm capture-tidalwave-demo
 ```
 
+Both scripts leave a preview alone when the new shot shows the same picture, so a run without visible changes produces no diff. The workflow `.github/workflows/previews.yml` runs them every Monday (and on demand) and opens a pull request from `chore/refresh-previews` when an image changed. It needs the repository setting "Allow GitHub Actions to create and approve pull requests".
+
+### Public key
+
+`public/pubkey.asc` is the public part of the commit signing key, linked from the contact section. Export it again after extending or adding a subkey:
+
+```bash
+gpg --armor --export "$(git config user.signingkey | tr -d '!')" > public/pubkey.asc
+```
+
+The fingerprint in `src/data/contact.ts` belongs to the primary key. `tests/e2e/gpg.spec.ts` computes it from the published file and fails when the two differ.
+
 ### Regenerate the OG image
 
 ```bash
@@ -53,7 +74,7 @@ docker run --rm -p 8080:8080 homepage:dev
 
 ## Status API
 
-`api/` is a small FastAPI service behind `/api/status`, which the live bar polls. It returns the current Last.fm track, server load from Prometheus and the weather from Open-Meteo, each cached for a short time. A source that fails or has no data comes back as `null`.
+`api/` is a small FastAPI service behind `/api/status`, which the live bar polls. It returns the current Last.fm track, server load from Prometheus and the weather from Open-Meteo, each cached for a short time. A source that fails or has no data comes back as `null`. `projects` maps each project name to `up` or `down`, from a GET on its URL once a minute; an answer below 400 counts as up, and the live badge of the project shows the result.
 
 ```bash
 cd api
@@ -71,6 +92,7 @@ uv run ruff check
 | `LASTFM_USER` | `SpotifyNutzeer` | Last.fm user whose tracks are shown. |
 | `PROMETHEUS_URL` | `http://monitoring-kube-prometheus-prometheus.monitoring:9090` | Prometheus base URL for the server load. |
 | `WEATHER_LAT`, `WEATHER_LON` | coordinates of Bierwang | Location for the weather. |
+| `PROJECT_URLS` | `{"linkhop": "https://linkhop.paul.wtf", "tidalwave": "https://tidalwave.paul.wtf"}` | JSON object of project name and the URL to check. `{}` turns the check off. |
 
 Container:
 

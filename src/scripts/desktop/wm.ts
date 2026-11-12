@@ -2,7 +2,9 @@ import { dwindle, type Rect } from './layout';
 import { initScrollFocus } from '../scroll-focus';
 import { revealEmails } from '../contact-actions';
 import { createTerminal } from './terminal';
+import { createLock } from './lock';
 import { latest } from '../live/status';
+import { markProjects } from '../live/projects';
 
 export interface DesktopApi {
   enter(ws?: number): void;
@@ -78,6 +80,7 @@ export function initDesktop(): DesktopApi {
   let keybindsShown = false;
   let clearTimer = 0;
   let stopScrollFocus: (() => void) | null = initScrollFocus();
+  const lock = createLock();
 
   const ws = (n: number): Workspace | undefined => spaces[n - 1];
 
@@ -89,6 +92,7 @@ export function initDesktop(): DesktopApi {
     el.setAttribute('aria-label', label);
     el.append(content);
     revealEmails(el);
+    markProjects(el);
     el.addEventListener('mouseenter', () => setFocus(el));
     el.addEventListener('focusin', () => setFocus(el, false));
     return el;
@@ -229,11 +233,13 @@ export function initDesktop(): DesktopApi {
     popIn(space.wins, POP_DELAY);
     setFocus(space.focus ?? space.wins[0]);
     refreshBar();
+    lock.arm();
   }
 
   function leave(remember = true): void {
     if (!on) return;
     on = false;
+    lock.disarm();
     if (remember) writeStore(MODE_KEY, 'scroll');
     for (const el of ws(cur)?.wins ?? []) el.classList.add('is-pre');
     wm.classList.add('is-leaving');
@@ -281,7 +287,7 @@ export function initDesktop(): DesktopApi {
     refreshBar();
   }
 
-  function add(el: HTMLElement): void {
+  function add(el: HTMLElement, focus = true): void {
     const space = ws(cur);
     if (!space) return;
     space.full = null;
@@ -289,8 +295,16 @@ export function initDesktop(): DesktopApi {
     space.layer.append(el);
     layout(cur);
     popIn([el], 20);
-    setFocus(el);
+    if (focus) setFocus(el);
     refreshBar();
+  }
+
+  function openPhoto(cat: string): void {
+    const t = document.querySelector<HTMLTemplateElement>(`template[data-cat="${CSS.escape(cat)}"]`);
+    if (!on || !t || ws(cur)?.wins.some((w) => w.dataset.cat === cat)) return;
+    const el = makeWindow(t.content.cloneNode(true), t.dataset.label ?? '');
+    el.dataset.cat = cat;
+    add(el, false);
   }
 
   function openWindow(content: HTMLElement): void {
@@ -304,6 +318,8 @@ export function initDesktop(): DesktopApi {
       go,
       close: () => win && closeWindow(win),
       live: latest,
+      open: (url) => window.open(url, '_blank', 'noopener,noreferrer'),
+      photo: openPhoto,
     });
     openWindow(term);
     win = term.closest<HTMLElement>('.wm-window');

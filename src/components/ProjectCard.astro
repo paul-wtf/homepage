@@ -1,14 +1,17 @@
 ---
 import type { Project } from '../data/projects';
 import type { ImageMetadata } from 'astro';
+import type { RepoMeta } from '../data/github';
+import ProjectMeta from './ProjectMeta.astro';
 import { Image } from 'astro:assets';
 
 interface Props {
   project: Project;
   preview?: ImageMetadata;
+  meta?: RepoMeta;
 }
 
-const { project, preview } = Astro.props;
+const { project, preview, meta } = Astro.props;
 const isLive = !!project.liveUrl;
 ---
 <a class={`pcard window window--focusable ${project.featured ? 'featured' : ''}`} href={project.liveUrl ?? project.repoUrl} target="_blank" rel="noopener noreferrer">
@@ -27,7 +30,7 @@ const isLive = !!project.liveUrl;
   <div class="head">
     <h3>{project.name}</h3>
     {isLive && (
-      <span class="live">live · {project.liveUrl?.replace(/^https?:\/\//, '')}</span>
+      <span class="live" data-project={project.name}><span data-word>live</span> · {project.liveUrl?.replace(/^https?:\/\//, '')}</span>
     )}
   </div>
   <p class="desc">{project.description}</p>
@@ -36,6 +39,7 @@ const isLive = !!project.liveUrl;
   </ul>
   <div class="links">
     <span class="repo">{project.repoUrl.replace('https://', '')}</span>
+    <ProjectMeta meta={meta} />
   </div>
 </a>
 
@@ -83,6 +87,17 @@ const isLive = !!project.liveUrl;
     white-space: nowrap;
   }
 
+  .live[data-state]::before {
+    content: '';
+    display: inline-block;
+    width: 0.5em;
+    height: 0.5em;
+    margin-right: 0.45em;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .live[data-state='down'] { color: var(--red); }
+
   .desc {
     color: var(--subtext0);
     font-size: 0.88rem;
@@ -108,9 +123,14 @@ const isLive = !!project.liveUrl;
   }
 
   .links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.2rem 1rem;
     margin-top: 0.25rem;
     color: var(--overlay2);
     font-size: 0.76rem;
     overflow-wrap: anywhere;
   }
+  .links :global(.meta) { font-variant-numeric: tabular-nums; }
 </style>

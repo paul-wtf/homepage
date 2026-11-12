@@ -17,6 +17,7 @@ const ogImageURL = new URL(ogImage, Astro.site).toString();
 import '@fontsource-variable/jetbrains-mono';
 import '@fontsource-variable/jetbrains-mono/wght-italic.css';
 import '../styles/tokens.css';
+import Wallpaper from '../components/Wallpaper.astro';
 ---
 <!doctype html>
 <html lang="de">
@@ -25,7 +26,14 @@ import '../styles/tokens.css';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
 
-    <script is:inline>document.documentElement.classList.add('js');</script>
+    <script is:inline>
+      document.documentElement.classList.add('js');
+      // Key and names as in src/scripts/theme.ts, set before the first paint.
+      try {
+        const flavor = localStorage.getItem('paulwtf:theme');
+        if (['latte', 'frappe', 'macchiato'].includes(flavor)) document.documentElement.dataset.theme = flavor;
+      } catch {}
+    </script>
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalURL} />
@@ -46,6 +54,7 @@ import '../styles/tokens.css';
     <meta name="twitter:image" content={ogImageURL} />
   </head>
   <body>
+    <Wallpaper />
     <slot />
     <!-- Zen-Frame wie Frame.qml: Mantle-Rahmenstreifen (als Border) plus
          vier konkave Viewport-Ecken (Radial-Gradients). Oben endet der
@@ -83,6 +92,10 @@ import '../styles/tokens.css';
       }
     </style>
     <script>
+      import { syncThemeColor } from '../scripts/theme';
+
+      if (document.documentElement.dataset.theme) syncThemeColor();
+
       const reveals = document.querySelectorAll<HTMLElement>('[data-reveal]');
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (reduced || !('IntersectionObserver' in window)) {

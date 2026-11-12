@@ -4,6 +4,8 @@ import portrait from '../../assets/profilepicture.png';
 import { about } from '../../data/about';
 import { projects } from '../../data/projects';
 import { previews } from '../../data/previews';
+import { projectMeta } from '../../data/github';
+import ProjectMeta from '../ProjectMeta.astro';
 import { tools, palette } from '../../data/tools';
 import NixLogo from '../NixLogo.astro';
 import { workstation, laptop, server } from '../../data/hardware';
@@ -12,6 +14,7 @@ import { contacts, contactIcons, emailParts } from '../../data/contact';
 
 const featured = projects.filter((p) => p.featured);
 const others = projects.filter((p) => !p.featured);
+const meta = await projectMeta();
 const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   (typeof contacts)[number]['kind'],
   (typeof contacts)[number]
@@ -45,13 +48,16 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
     )}
     <div class="head">
       <h3>{p.name}</h3>
-      {p.liveUrl && <span class="live">live · {p.liveUrl.replace(/^https?:\/\//, '')}</span>}
+      {p.liveUrl && <span class="live" data-project={p.name}><span data-word>live</span> · {p.liveUrl.replace(/^https?:\/\//, '')}</span>}
     </div>
     <p class="desc">{p.description}</p>
     <ul class="stack">
       {p.stack.map((s) => <li>{s}</li>)}
     </ul>
-    <a class="repo" href={p.liveUrl ?? p.repoUrl} target="_blank" rel="noopener noreferrer">{p.repoUrl.replace('https://', '')}</a>
+    <div class="links">
+      <a class="repo" href={p.liveUrl ?? p.repoUrl} target="_blank" rel="noopener noreferrer">{p.repoUrl.replace('https://', '')}</a>
+      <ProjectMeta meta={meta[p.name]} />
+    </div>
   </template>
 ))}
 
@@ -65,6 +71,7 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
         <ul class="stack">
           {p.stack.map((s) => <li>{s}</li>)}
         </ul>
+        <ProjectMeta meta={meta[p.name]} />
       </li>
     ))}
   </ul>
@@ -169,6 +176,16 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </div>
 </template>
 
+{cats.map((c) => {
+  const path = `~/sidefacts/katzen/${c.name.toLowerCase()}`;
+  return (
+    <template data-cat={c.name.toLowerCase()} data-label={c.name} data-path={path}>
+      <span class="path">{path}</span>
+      <Image src={c.image} alt={`Katze ${c.name}`} widths={[480, 960]} sizes="(min-width: 900px) 640px, 100vw" decoding="async" />
+    </template>
+  );
+})}
+
 <template data-window data-ws="6" data-label="GitHub" data-path="~/kontakt/github">
   <span class="path">~/kontakt/github</span>
   <a class="tile" href={contact.github.href} target="_blank" rel="noopener noreferrer">
@@ -221,4 +238,18 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
       <span class="sr-only">— in Mail-Client öffnen</span>
     </div>
   </button>
+</template>
+
+<template data-window data-ws="6" data-label="GPG" data-path="~/kontakt/gpg">
+  <span class="path">~/kontakt/gpg</span>
+  <a class="tile gpg" href={contact.gpg.href}>
+    <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+      <path fill="currentColor" d={contactIcons.gpg}/>
+    </svg>
+    <div>
+      <span class="label">{contact.gpg.label}</span>
+      <span class="value">{contact.gpg.value}</span>
+      <span class="sr-only">— öffentlichen Schlüssel herunterladen</span>
+    </div>
+  </a>
 </template>

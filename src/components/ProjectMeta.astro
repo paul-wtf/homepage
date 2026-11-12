@@ -1,0 +1,16 @@
+---
+import { commitDate, type RepoMeta } from '../data/github';
+
+interface Props {
+  meta?: RepoMeta;
+}
+
+const { meta } = Astro.props;
+---
+{(meta?.release || meta?.lastCommit) && (
+  <span class="meta">
+    {meta.release}{meta.release && meta.lastCommit && ' · '}{meta.lastCommit && (
+      <>letzter Commit <time datetime={meta.lastCommit}>{commitDate(meta.lastCommit)}</time></>
+    )}
+  </span>
+)}

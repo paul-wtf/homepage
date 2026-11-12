@@ -10,7 +10,7 @@ from homepage_api.settings import Settings
 
 @pytest.fixture
 def settings() -> Settings:
-    return Settings(lastfm_api_key="test-key", lastfm_user="someone")
+    return Settings(lastfm_api_key="test-key", lastfm_user="someone", project_urls={})
 
 
 @pytest.fixture

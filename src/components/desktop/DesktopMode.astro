@@ -11,6 +11,13 @@ const keys = [
 ---
 <div class="wm" data-wm></div>
 
+<div class="lock" data-lock role="dialog" aria-label="Sperrbildschirm" tabindex="-1" hidden>
+  <p class="lock-time" data-lock-time></p>
+  <p class="lock-date" data-lock-date></p>
+  <p class="lock-field">Taste oder Klick entsperrt</p>
+  <p class="lock-track" data-lock-track hidden><span class="note" aria-hidden="true">♪</span> <span data-lock-track-text></span></p>
+</div>
+
 <template data-keybinds data-label="Tastenkürzel" data-path="~/keybinds">
   <span class="path">~/keybinds</span>
   <h3>Tastenkürzel</h3>
@@ -402,6 +409,74 @@ const keys = [
     color: var(--text);
     caret-color: var(--teal);
     font: inherit;
+  }
+
+  /* Layout of hyprlock.nix: teal clock, date, field, and the blurred, darkened wallpaper behind. */
+  .lock {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--subtext0);
+    text-align: center;
+    animation: lock-in var(--dur-fast) var(--ease);
+  }
+  .lock[hidden] { display: none; }
+  .lock:focus-visible { outline: none; }
+  .lock p { margin: 0; }
+  .lock-time {
+    color: var(--teal);
+    font-size: clamp(4.5rem, 13vw, 9.5rem);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+  .lock-date {
+    padding: 0.9rem 0 2rem;
+    font-size: 1.3rem;
+  }
+  .lock-field {
+    display: grid;
+    place-items: center;
+    width: min(300px, 80vw);
+    height: 54px;
+    border-radius: var(--r-card);
+    background: var(--base);
+    box-shadow: 0 0 0 2px var(--teal), var(--card-shadow);
+    color: var(--text);
+    font-size: 0.88rem;
+  }
+  .lock-track {
+    position: absolute;
+    bottom: 3.5rem;
+    max-width: 90vw;
+    overflow: hidden;
+    font-size: 0.95rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .lock-track[hidden] { display: none; }
+  .lock-track .note { color: var(--teal); }
+  @keyframes lock-in {
+    from { opacity: 0; }
+  }
+
+  .wallpaper { transition: filter var(--dur) var(--ease); }
+  html.is-locked #top-nav,
+  html.is-locked .wm,
+  html.is-locked .zen-frame,
+  html.is-locked main { visibility: hidden; }
+  html.is-locked .wallpaper {
+    filter: blur(8px) brightness(0.75);
+    transform: scale(1.04);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lock { animation: none; }
+    .wallpaper { transition: none; }
   }
 
   .wm-window kbd {

@@ -2,6 +2,7 @@ import { dwindle, type Rect } from './layout';
 import { initScrollFocus } from '../scroll-focus';
 import { revealEmails } from '../contact-actions';
 import { createTerminal } from './terminal';
+import { createLock } from './lock';
 import { latest } from '../live/status';
 
 export interface DesktopApi {
@@ -78,6 +79,7 @@ export function initDesktop(): DesktopApi {
   let keybindsShown = false;
   let clearTimer = 0;
   let stopScrollFocus: (() => void) | null = initScrollFocus();
+  const lock = createLock();
 
   const ws = (n: number): Workspace | undefined => spaces[n - 1];
 
@@ -229,11 +231,13 @@ export function initDesktop(): DesktopApi {
     popIn(space.wins, POP_DELAY);
     setFocus(space.focus ?? space.wins[0]);
     refreshBar();
+    lock.arm();
   }
 
   function leave(remember = true): void {
     if (!on) return;
     on = false;
+    lock.disarm();
     if (remember) writeStore(MODE_KEY, 'scroll');
     for (const el of ws(cur)?.wins ?? []) el.classList.add('is-pre');
     wm.classList.add('is-leaving');

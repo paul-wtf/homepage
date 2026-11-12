@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: homepage-api
-          image: ghcr.io/paul-wtf/homepage-api:v0.2.0
+          image: ghcr.io/paul-wtf/homepage-api:v0.3.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

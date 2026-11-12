@@ -34,7 +34,7 @@ test.describe('terminal commands', () => {
   test('help lists the new commands', async ({ page }) => {
     await openTerminal(page);
     await run(page, 'help');
-    for (const cmd of ['open <projekt>', 'man paul', 'htop', 'linkhop <url>']) {
+    for (const cmd of ['open <projekt>', 'man paul', 'htop', 'linkhop <url>', 'homelab', 'changelog']) {
       await expect(term(page)).toContainText(cmd);
     }
   });

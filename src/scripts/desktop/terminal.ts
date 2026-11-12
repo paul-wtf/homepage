@@ -60,6 +60,7 @@ const COMMANDS: [string, string][] = [
   ['uptime', t.commands.uptime],
   ['htop', t.commands.htop],
   ['homelab', t.commands.homelab],
+  ['changelog', t.commands.changelog],
   ['weather', t.commands.weather],
   ['linkhop <url>', t.commands.linkhop],
   ['theme <flavor>', t.commands.theme],
@@ -295,6 +296,26 @@ function homelab(status: Status | null): TermOutput {
   );
 }
 
+const text = (el: Element | null | undefined): string => el?.textContent?.trim() ?? '';
+
+function changelog(): TermOutput {
+  const tpl = document.querySelector<HTMLTemplateElement>('template[data-changelog]');
+  if (!tpl) return lines(`changelog: ${t.unavailable}`);
+  const width = Math.max(...Object.values(ui[lang].changelog.kinds).map((k) => k.length));
+  const out: string[] = [];
+  for (const r of tpl.content.querySelectorAll('.release')) {
+    if (out.length) out.push('');
+    out.push([text(r.querySelector('.tag')), text(r.querySelector('time'))].filter(Boolean).join('  '));
+    const changes = [...r.querySelectorAll('.changes li')];
+    if (changes.length === 0) out.push(`  ${text(r.querySelector('.maintenance'))}`);
+    for (const c of changes) {
+      const scope = text(c.querySelector('.scope'));
+      out.push(`  ${text(c.querySelector('.kind')).padEnd(width)}  ${scope ? `${scope}: ` : ''}${text(c.querySelector('.subject'))}`);
+    }
+  }
+  return lines(...out);
+}
+
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const https = (v: unknown): string | null => (typeof v === 'string' && v.startsWith('https://') ? v : null);
 
@@ -392,6 +413,8 @@ export function run(line: string, ctx: TerminalContext): TermOutput | Promise<Te
       return htop(ctx.live());
     case 'homelab':
       return homelab(ctx.live());
+    case 'changelog':
+      return changelog();
     case 'linkhop':
       return linkhop(args[0]);
     case 'theme':

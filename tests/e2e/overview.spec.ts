@@ -160,6 +160,7 @@ test.describe('workspace overview', () => {
     await enterDesktop(page);
     await page.keyboard.press('3');
     await page.keyboard.press('q');
+    await page.keyboard.press('q');
     await expect(layer(page, 3).locator('.wm-window')).toHaveCount(0);
     await page.keyboard.press('1');
     await page.keyboard.press('Tab');

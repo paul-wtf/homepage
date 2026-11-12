@@ -4,7 +4,8 @@ import portrait from '../../assets/profilepicture.png';
 import { about } from '../../data/about';
 import { projects } from '../../data/projects';
 import { previews } from '../../data/previews';
-import { projectMeta } from '../../data/github';
+import { commitDate, projectMeta } from '../../data/github';
+import { changelog, compareUrl, REPO } from '../../data/changelog';
 import ProjectMeta from '../ProjectMeta.astro';
 import { tools, palette } from '../../data/tools';
 import NixLogo from '../NixLogo.astro';
@@ -30,6 +31,7 @@ const home = {
 const featured = projects.filter((p) => p.featured);
 const others = projects.filter((p) => !p.featured);
 const meta = await projectMeta();
+const releases = await changelog();
 const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   (typeof contacts)[number]['kind'],
   (typeof contacts)[number]
@@ -112,6 +114,38 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
     </div>
   </div>
 </template>
+
+{releases && (
+  <template data-window data-changelog data-ws="3" data-label={t.windows.changelog} data-path="~/tools/changelog">
+    <span class="path">~/tools/changelog</span>
+    <div class="changelog">
+      <h3>{t.changelog.title}</h3>
+      <ol class="plain releases">
+        {releases.map((r) => (
+          <li class="release">
+            <div class="release-head">
+              <a class="tag" href={compareUrl(r)} target="_blank" rel="noopener noreferrer" aria-label={t.changelog.compare(r.tag)}>{r.tag}</a>
+              {r.date && <time datetime={r.date}>{commitDate(r.date, lang)}</time>}
+            </div>
+            {r.changes.length > 0 ? (
+              <ul class="plain changes">
+                {r.changes.map((c) => (
+                  <li data-type={c.type}>
+                    <span class="kind">{t.changelog.kinds[c.type]}</span>
+                    <span class="text">{c.scope && <span class="scope">{c.scope}</span>}<span class="subject">{c.subject}</span></span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p class="maintenance">{t.changelog.maintenance}</p>
+            )}
+          </li>
+        ))}
+      </ol>
+      <a class="repo" href={`https://github.com/${REPO}/tags`} target="_blank" rel="noopener noreferrer">{t.changelog.all}</a>
+    </div>
+  </template>
+)}
 
 <template data-window data-ws="4" data-label="Workstation" data-path="~/hardware/workstation">
   <span class="path">~/hardware/workstation</span>

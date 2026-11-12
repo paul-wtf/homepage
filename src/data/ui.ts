@@ -119,6 +119,13 @@ const de = {
     up: (time: string) => `up ${time}`,
     storageOf: (node: string, used: string, total: string) => `Speicher von ${node}: ${used} von ${total} belegt`,
   },
+  changelog: {
+    title: 'Änderungen an paul.wtf',
+    kinds: { feat: 'neu', fix: 'fix', perf: 'perf' },
+    maintenance: 'nur Wartung',
+    compare: (tag: string) => `Änderungen in ${tag} auf GitHub`,
+    all: 'alle Tags auf GitHub',
+  },
   desktop: {
     keys: {
       workspace: 'Workspace wechseln',
@@ -159,6 +166,7 @@ const de = {
     email: 'E-Mail',
     music: 'Musik',
     homelab: 'Homelab',
+    changelog: 'Changelog',
   },
   paths: {
     about: 'über-mich',
@@ -185,6 +193,7 @@ const de = {
       uptime: 'Laufzeit des Servers',
       htop: 'Auslastung des Servers',
       homelab: 'Zustand des Homelab-Clusters',
+      changelog: 'Änderungen an dieser Seite',
       weather: 'Wetter in Bierwang',
       linkhop: 'Musik-Link für andere Dienste umwandeln',
       theme: 'Catppuccin-Flavor wechseln',
@@ -356,6 +365,13 @@ const en: Ui = {
     up: (time) => `up ${time}`,
     storageOf: (node, used, total) => `Storage on ${node}: ${used} of ${total} in use`,
   },
+  changelog: {
+    title: 'Changes to paul.wtf',
+    kinds: { feat: 'new', fix: 'fix', perf: 'perf' },
+    maintenance: 'maintenance only',
+    compare: (tag) => `Changes in ${tag} on GitHub`,
+    all: 'all tags on GitHub',
+  },
   desktop: {
     keys: {
       workspace: 'switch workspace',
@@ -396,6 +412,7 @@ const en: Ui = {
     email: 'Email',
     music: 'Music',
     homelab: 'Homelab',
+    changelog: 'Changelog',
   },
   paths: {
     about: 'about',
@@ -422,6 +439,7 @@ const en: Ui = {
       uptime: 'how long the server has been up',
       htop: 'load on the server',
       homelab: 'state of the homelab cluster',
+      changelog: 'changes to this site',
       weather: 'weather in Bierwang',
       linkhop: 'convert a music link for other services',
       theme: 'switch the Catppuccin flavor',

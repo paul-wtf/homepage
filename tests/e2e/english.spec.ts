@@ -227,7 +227,7 @@ test.describe('english desktop mode', () => {
     await expect(page.locator('.wm-cell')).toHaveText(['1 about', '2 projects', '3 tools', '4 hardware', '5 sidefacts', '6 contact']);
     await page.keyboard.press('3');
     await expect(layer(page, 3)).toBeVisible();
-    await expect(layer(page, 3).locator('.wm-window')).toHaveAttribute('aria-label', 'System info');
+    await expect(layer(page, 3).locator('.wm-window').first()).toHaveAttribute('aria-label', 'System info');
   });
 
   test('the lock screen', async ({ page }) => {

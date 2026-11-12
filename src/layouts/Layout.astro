@@ -17,6 +17,7 @@ const ogImageURL = new URL(ogImage, Astro.site).toString();
 import '@fontsource-variable/jetbrains-mono';
 import '@fontsource-variable/jetbrains-mono/wght-italic.css';
 import '../styles/tokens.css';
+import Wallpaper from '../components/Wallpaper.astro';
 ---
 <!doctype html>
 <html lang="de">
@@ -46,6 +47,7 @@ import '../styles/tokens.css';
     <meta name="twitter:image" content={ogImageURL} />
   </head>
   <body>
+    <Wallpaper />
     <slot />
     <!-- Zen-Frame wie Frame.qml: Mantle-Rahmenstreifen (als Border) plus
          vier konkave Viewport-Ecken (Radial-Gradients). Oben endet der

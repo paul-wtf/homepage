@@ -49,6 +49,16 @@ TW_URL=http://localhost:4319 BROWSER_BIN=$(which brave) pnpm capture-tidalwave-d
 
 Both scripts leave a preview alone when the new shot shows the same picture, so a run without visible changes produces no diff. The workflow `.github/workflows/previews.yml` runs them every Monday (and on demand) and opens a pull request from `chore/refresh-previews` when an image changed. It needs the repository setting "Allow GitHub Actions to create and approve pull requests".
 
+### Public key
+
+`public/pubkey.asc` is the public part of the commit signing key, linked from the contact section. Export it again after extending or adding a subkey:
+
+```bash
+gpg --armor --export "$(git config user.signingkey | tr -d '!')" > public/pubkey.asc
+```
+
+The fingerprint in `src/data/contact.ts` belongs to the primary key. `tests/e2e/gpg.spec.ts` computes it from the published file and fails when the two differ.
+
 ### Regenerate the OG image
 
 ```bash

@@ -6,6 +6,7 @@ const [github, discord, youtube] = ['github', 'discord', 'youtube'].map(
   (k) => contacts.find((c) => c.kind === k)!
 );
 const email = contacts.find((c) => c.kind === 'email')!;
+const gpg = contacts.find((c) => c.kind === 'gpg')!;
 ---
 <section id="contact" data-ws="6" class="contact section-shell" data-reveal>
   <h2 class="section-title"><span class="ws" aria-hidden="true">6</span>Kontakt</h2>
@@ -44,6 +45,17 @@ const email = contacts.find((c) => c.kind === 'email')!;
 
     <Email user={emailParts.user} domain={emailParts.domain} label={email.label} placeholder={email.value} />
 
+    <a class="window window--focusable tile gpg" href={gpg.href}>
+      <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+        <path fill="currentColor" d={contactIcons.gpg}/>
+      </svg>
+      <div>
+        <span class="label">{gpg.label}</span>
+        <span class="value">{gpg.value}</span>
+        <span class="sr-only">— öffentlichen Schlüssel herunterladen</span>
+      </div>
+    </a>
+
   </div>
 </section>
 
@@ -78,6 +90,11 @@ const email = contacts.find((c) => c.kind === 'email')!;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .discord.copied .value { color: var(--green); }
+  .gpg { grid-column: 1 / -1; }
+  .gpg .value {
+    white-space: normal;
+    font-variant-numeric: tabular-nums;
+  }
 
   @media (max-width: 880px) { .grid { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }

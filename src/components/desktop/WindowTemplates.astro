@@ -229,3 +229,17 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
     </div>
   </button>
 </template>
+
+<template data-window data-ws="6" data-label="GPG" data-path="~/kontakt/gpg">
+  <span class="path">~/kontakt/gpg</span>
+  <a class="tile gpg" href={contact.gpg.href}>
+    <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+      <path fill="currentColor" d={contactIcons.gpg}/>
+    </svg>
+    <div>
+      <span class="label">{contact.gpg.label}</span>
+      <span class="value">{contact.gpg.value}</span>
+      <span class="sr-only">— öffentlichen Schlüssel herunterladen</span>
+    </div>
+  </a>
+</template>

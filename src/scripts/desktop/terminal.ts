@@ -17,7 +17,8 @@ export interface TerminalContext {
 const HOST = 'paul@paul.wtf';
 const PROMPT = `${HOST} ~>`;
 const WORKSPACES = 6;
-const FILES = ['über-mich', 'kontakt', 'projekte', 'pax'];
+const FILES = ['über-mich', 'kontakt', 'projekte', 'pax', 'pubkey'];
+const SITE = 'https://paul.wtf';
 const UNAVAILABLE = 'nicht verfügbar';
 
 const lines = (...texts: string[]): TermOutput => texts.map((text) => ({ text }));
@@ -54,7 +55,7 @@ function cat(file: string | undefined): TermOutput {
       return lines(
         ...contacts.map((c) => {
           const value = c.kind === 'email' ? email() : c.value;
-          return `${c.label.padEnd(width)}  ${value}${c.href ? `  ${c.href}` : ''}`;
+          return `${c.label.padEnd(width)}  ${value}${c.href ? `  ${new URL(c.href, SITE).href}` : ''}`;
         })
       );
     }
@@ -77,6 +78,11 @@ function cat(file: string | undefined): TermOutput {
         `Mag: ${pax.likes.join('; ')}`,
         `Mag nicht: ${pax.dislikes.join('; ')}`
       );
+    case 'pubkey': {
+      const key = contacts.find((c) => c.kind === 'gpg');
+      if (!key?.href) return err('cat: pubkey: No such file or directory');
+      return lines(`Fingerprint  ${key.value}`, `Schlüssel    ${new URL(key.href, SITE).href}`);
+    }
     default:
       return err(`cat: ${file}: No such file or directory`);
   }

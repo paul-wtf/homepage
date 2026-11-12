@@ -13,3 +13,5 @@ class Settings(BaseSettings):
         "linkhop": "https://linkhop.paul.wtf",
         "tidalwave": "https://tidalwave.paul.wtf",
     }
+    tidalwave_url: str = "https://tidalwave.paul.wtf"
+    tidalwave_share_token: str | None = None

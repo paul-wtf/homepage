@@ -27,6 +27,12 @@ spec:
                   name: homepage-api-credentials
                   key: LASTFM_API_KEY
                   optional: true
+            - name: TIDALWAVE_SHARE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: homepage-api-credentials
+                  key: TIDALWAVE_SHARE_TOKEN
+                  optional: true
           resources:
             requests:
               cpu: 20m

@@ -39,6 +39,7 @@ test.describe('fuzzy search', () => {
   test('ranks a prefix above a scattered match and keeps the order of ties', () => {
     const items = ['streamcontroller-tidal', 'tidalwave', 'fastfetch', 'tools'];
     expect(rank('ti', items, (s) => s)[0]).toBe('tidalwave');
+    expect(rank('cat', ['Cats ~/sidefacts/cats', 'cat <file> print a file'], (s) => s)[0]).toBe('cat <file> print a file');
     expect(rank('', items, (s) => s)).toEqual(items);
     expect(rank('xyz', items, (s) => s)).toEqual([]);
   });

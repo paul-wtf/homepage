@@ -5,6 +5,7 @@ const keys = [
   { keys: ['h', 'j', 'k', 'l'], action: 'Fokus bewegen (auch Pfeiltasten)' },
   { keys: ['Enter'], action: 'Terminal öffnen' },
   { keys: ['Shift', 'Enter'], action: 'Launcher öffnen' },
+  { keys: ['S'], action: 'Scratchpad mit Terminal ein/aus' },
   { keys: ['Q'], action: 'Fenster schließen' },
   { keys: ['F'], action: 'Vollbild an/aus' },
   { keys: ['?'], action: 'diese Übersicht' },
@@ -106,9 +107,13 @@ const keys = [
     border-radius: calc(var(--r-window) / var(--overview-scale, 1));
     transition:
       transform var(--dur-slide) var(--ease-out),
-      background-color var(--dur-slide) var(--ease-out);
+      background-color var(--dur-slide) var(--ease-out),
+      filter var(--dur) var(--ease);
   }
   .wm-layer.is-parked { visibility: hidden; }
+  .wm-scratch { z-index: 20; }
+  html.scratch-on .wm-layer:not(.wm-scratch),
+  html.scratch-on .wallpaper { filter: brightness(0.55); }
   .wm.is-overview .wm-layer { background-color: var(--mantle); }
   .wm.is-overview .wm-layer.is-empty { background-color: var(--crust); }
 

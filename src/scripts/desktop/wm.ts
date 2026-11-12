@@ -35,6 +35,8 @@ const SLIDE_MS = 420;
 const CLOSE_MS = 180;
 const OVERVIEW_COLS = 3;
 const OVERVIEW_LABEL = 34;
+// Hyprland's default special_scale_factor of 1 would cover the workspace below.
+const SCRATCH_SCALE = 0.8;
 const MODE_KEY = 'paulwtf:mode';
 const SEEN_KEY = 'paulwtf:keybinds-seen';
 const INTERACTIVE = 'button, a, input, textarea, select, [contenteditable]';
@@ -86,6 +88,9 @@ export function initDesktop(): DesktopApi {
   let overview = false;
   let overviewTimer = 0;
   let cells: HTMLButtonElement[] = [];
+  let scratch: Workspace | null = null;
+  let scratchOn = false;
+  let scratchTimer = 0;
   const overviewEl = document.createElement('div');
   overviewEl.className = 'wm-overview';
   overviewEl.setAttribute('role', 'group');
@@ -97,6 +102,7 @@ export function initDesktop(): DesktopApi {
   const launcher = createLauncher(launcherEntries, typedLine);
 
   const ws = (n: number): Workspace | undefined => spaces[n - 1];
+  const active = (): Workspace | undefined => (scratchOn && scratch ? scratch : ws(cur));
 
   function makeWindow(content: Node, label: string): HTMLElement {
     const el = document.createElement('div');
@@ -158,7 +164,14 @@ export function initDesktop(): DesktopApi {
     });
     overviewEl.replaceChildren(...cells);
     overviewEl.hidden = true;
-    wm.replaceChildren(...layers, overviewEl);
+    const special = document.createElement('div');
+    special.className = 'wm-layer wm-scratch is-parked';
+    special.addEventListener('pointerdown', (e) => {
+      if (e.target === special) hideScratch();
+    });
+    scratch = { layer: special, wins: [], focus: null, full: null };
+    scratchOn = false;
+    wm.replaceChildren(...layers, special, overviewEl);
   }
 
   function outerArea(): { outer: Rect; gapIn: number } {
@@ -175,14 +188,16 @@ export function initDesktop(): DesktopApi {
     };
   }
 
-  function layout(n: number): void {
-    const space = ws(n);
+  function layout(space: Workspace | undefined): void {
     if (!space) return;
     const { outer, gapIn } = outerArea();
-    const rects = dwindle(outer, space.wins.length, gapIn);
+    const w = outer.w * SCRATCH_SCALE;
+    const h = outer.h * SCRATCH_SCALE;
+    const area = space === scratch ? { x: outer.x + (outer.w - w) / 2, y: outer.y + (outer.h - h) / 2, w, h } : outer;
+    const rects = dwindle(area, space.wins.length, gapIn);
     space.wins.forEach((el, i) => {
       const full = space.full === el;
-      const r = full ? outer : rects[i];
+      const r = full ? area : rects[i];
       el.classList.toggle('is-full', full);
       el.style.left = `${r.x}px`;
       el.style.top = `${r.y}px`;
@@ -234,10 +249,11 @@ export function initDesktop(): DesktopApi {
 
   function openOverview(): void {
     if (!on || overview) return;
+    hideScratch();
     clearTimeout(overviewTimer);
     overview = true;
     spaces.forEach((space, i) => {
-      layout(i + 1);
+      layout(space);
       space.layer.style.transition = 'none';
       space.layer.classList.remove('is-parked');
       space.layer.inert = true;
@@ -293,8 +309,82 @@ export function initDesktop(): DesktopApi {
     cells[next].focus({ preventScroll: true });
   }
 
+  function findTerminal(): { win: HTMLElement; from: Workspace } | null {
+    const here = ws(cur);
+    const order = here ? [here, ...spaces.filter((space) => space !== here)] : spaces;
+    for (const from of order) {
+      const open = from.wins.filter((w) => terminals.has(w));
+      const win = open.find((w) => w === from.focus) ?? open[open.length - 1];
+      if (win) return { win, from };
+    }
+    return null;
+  }
+
+  function moveWindow(win: HTMLElement, from: Workspace, to: Workspace): void {
+    const i = from.wins.indexOf(win);
+    from.wins.splice(i, 1);
+    if (from.full === win) from.full = null;
+    if (from.focus === win) from.focus = from.wins[Math.max(0, i - 1)] ?? null;
+    win.classList.remove('is-focus', 'is-full', 'is-pre');
+    to.full = null;
+    to.wins.push(win);
+    to.layer.append(win);
+    to.focus = win;
+    layout(from);
+    layout(to);
+    refreshBar();
+  }
+
+  function showScratch(): void {
+    if (!on || overview || scratchOn || !scratch) return;
+    clearTimeout(scratchTimer);
+    scratchOn = true;
+    for (const w of ws(cur)?.wins ?? []) w.classList.remove('is-focus');
+    for (const space of spaces) space.layer.inert = true;
+    html.classList.add('scratch-on');
+
+    const { layer } = scratch;
+    layout(scratch);
+    layer.style.transition = 'none';
+    layer.style.transform = 'translateY(-100%)';
+    layer.classList.remove('is-parked');
+    void layer.offsetWidth;
+    layer.style.transition = '';
+    layer.style.transform = '';
+
+    if (!scratch.wins.some((w) => terminals.has(w))) {
+      const found = findTerminal();
+      if (found) moveWindow(found.win, found.from, scratch);
+      else openTerminal();
+    }
+    const win = scratch.focus ?? scratch.wins[0];
+    setFocus(win);
+    if (win) terminals.get(win)?.focus();
+  }
+
+  function hideScratch(): void {
+    if (!scratchOn || !scratch) return;
+    scratchOn = false;
+    html.classList.remove('scratch-on');
+    for (const space of spaces) space.layer.inert = false;
+    const { layer } = scratch;
+    layer.style.transform = 'translateY(-100%)';
+    const park = () => {
+      if (scratchOn) return;
+      layer.classList.add('is-parked');
+      layer.style.transform = '';
+    };
+    if (ms(SLIDE_MS) === 0) park();
+    else scratchTimer = window.setTimeout(park, SLIDE_MS);
+    if (document.activeElement instanceof HTMLElement && layer.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+    const below = ws(cur);
+    setFocus(below?.focus ?? below?.wins[0]);
+  }
+
   function setFocus(el: HTMLElement | null | undefined, moveDom = true): void {
-    const space = ws(cur);
+    const space = active();
     if (!on || !el || !space?.wins.includes(el)) return;
     space.focus = el;
     for (const w of space.wins) w.classList.toggle('is-focus', w === el);
@@ -366,7 +456,7 @@ export function initDesktop(): DesktopApi {
     keybindsShown = true;
     writeStore(SEEN_KEY, '1');
 
-    layout(cur);
+    layout(space);
     popIn(space.wins, POP_DELAY);
     setFocus(space.focus ?? space.wins[0]);
     refreshBar();
@@ -377,8 +467,11 @@ export function initDesktop(): DesktopApi {
     if (!on) return;
     on = false;
     overview = false;
+    scratchOn = false;
     clearTimeout(overviewTimer);
+    clearTimeout(scratchTimer);
     wm.classList.remove('is-overview');
+    html.classList.remove('scratch-on');
     overviewEl.hidden = true;
     launcher.close();
     lock.disarm();
@@ -402,18 +495,19 @@ export function initDesktop(): DesktopApi {
   }
 
   function go(n: number): void {
-    const from = ws(cur);
-    const to = ws(n);
     if (overview) {
       closeOverview(n);
       return;
     }
+    hideScratch();
+    const from = ws(cur);
+    const to = ws(n);
     if (!on || n === cur || !from || !to) return;
     const dir = n > cur ? 1 : -1;
     const prev = cur;
     cur = n;
 
-    layout(n);
+    layout(to);
     to.layer.style.transition = 'none';
     to.layer.style.transform = `translateX(${dir * 100}%)`;
     to.layer.classList.remove('is-parked');
@@ -434,12 +528,12 @@ export function initDesktop(): DesktopApi {
   }
 
   function add(el: HTMLElement, focus = true): void {
-    const space = ws(cur);
+    const space = active();
     if (!space) return;
     space.full = null;
     space.wins.push(el);
     space.layer.append(el);
-    layout(cur);
+    layout(space);
     popIn([el], 20);
     if (focus) setFocus(el);
     refreshBar();
@@ -448,7 +542,7 @@ export function initDesktop(): DesktopApi {
   function openPhoto(cat: string, focus = false): void {
     const t = document.querySelector<HTMLTemplateElement>(`template[data-cat="${CSS.escape(cat)}"]`);
     if (!on || !t) return;
-    const open = ws(cur)?.wins.find((w) => w.dataset.cat === cat);
+    const open = active()?.wins.find((w) => w.dataset.cat === cat);
     if (open) {
       if (focus) setFocus(open);
       return;
@@ -480,7 +574,7 @@ export function initDesktop(): DesktopApi {
   }
 
   function runInTerminal(line: string, complete: boolean): void {
-    const space = ws(cur);
+    const space = active();
     const open = space?.wins.filter((w) => terminals.has(w)) ?? [];
     const win = open.find((w) => w === space?.focus) ?? open[open.length - 1];
     const term = win ? terminals.get(win) : openTerminal();
@@ -503,7 +597,7 @@ export function initDesktop(): DesktopApi {
     }
     if (space.full && space.full !== open) {
       space.full = null;
-      layout(cur);
+      layout(space);
     }
     setFocus(open);
   }
@@ -551,7 +645,7 @@ export function initDesktop(): DesktopApi {
   }
 
   function openKeybinds(): void {
-    const open = ws(cur)?.wins.find((w) => w.dataset.keybinds !== undefined);
+    const open = active()?.wins.find((w) => w.dataset.keybinds !== undefined);
     if (open) setFocus(open);
     else {
       const kb = keybindsWindow();
@@ -560,33 +654,35 @@ export function initDesktop(): DesktopApi {
   }
 
   function closeWindow(el: HTMLElement): void {
-    const space = ws(cur);
-    const i = space?.wins.indexOf(el) ?? -1;
-    if (!on || !space || i < 0) return;
+    const space = [...spaces, ...(scratch ? [scratch] : [])].find((sp) => sp.wins.includes(el));
+    if (!on || !space) return;
+    const i = space.wins.indexOf(el);
     const wasFocus = space.focus === el;
     space.wins.splice(i, 1);
+    terminals.delete(el);
     if (space.full === el) space.full = null;
     el.classList.remove('is-focus');
     el.classList.add('is-closing');
     setTimeout(() => el.remove(), ms(CLOSE_MS));
-    layout(cur);
+    layout(space);
     if (wasFocus) {
-      space.focus = null;
-      setFocus(space.wins[Math.max(0, i - 1)]);
+      space.focus = space.wins[Math.max(0, i - 1)] ?? null;
+      if (space === active()) setFocus(space.focus);
     }
+    if (space === scratch && space.wins.length === 0) hideScratch();
     refreshBar();
   }
 
   function closeFocused(): void {
-    const el = ws(cur)?.focus;
+    const el = active()?.focus;
     if (el) closeWindow(el);
   }
 
   function toggleFull(): void {
-    const space = ws(cur);
+    const space = active();
     if (!space?.focus) return;
     space.full = space.full === space.focus ? null : space.focus;
-    layout(cur);
+    layout(space);
   }
 
   function center(el: HTMLElement): { x: number; y: number } {
@@ -594,7 +690,7 @@ export function initDesktop(): DesktopApi {
   }
 
   function moveFocus(dx: number, dy: number): void {
-    const space = ws(cur);
+    const space = active();
     if (!space) return;
     if (!space.focus) {
       setFocus(space.wins[0]);
@@ -646,8 +742,12 @@ export function initDesktop(): DesktopApi {
       if (k === 'escape') closeOverview();
       else if (directions[k]) moveCell(...directions[k]);
       else if (k !== 'enter' || !e.shiftKey) return;
+    } else if (k === 's') {
+      if (scratchOn) hideScratch();
+      else showScratch();
     } else if (k === 'escape') {
-      leave();
+      if (scratchOn) hideScratch();
+      else leave();
     } else if (k === 'enter' && e.shiftKey) {
       if (!e.repeat) launcher.open();
     } else if (k === 'enter') {
@@ -682,11 +782,12 @@ export function initDesktop(): DesktopApi {
 
   new ResizeObserver(() => {
     if (!on) return;
+    layout(scratch ?? undefined);
     if (!overview) {
-      layout(cur);
+      layout(ws(cur));
       return;
     }
-    spaces.forEach((_, i) => layout(i + 1));
+    spaces.forEach(layout);
     placeOverview(null);
   }).observe(wm);
 

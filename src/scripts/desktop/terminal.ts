@@ -321,7 +321,8 @@ export function run(line: string, ctx: TerminalContext): TermOutput | Promise<Te
       return lines(
         ...COMMANDS.map(([c, d]) => `${c.padEnd(width)}  ${d}`),
         '',
-        'Tab vervollständigt Befehle und Dateinamen.'
+        'Tab vervollständigt Befehle und Dateinamen.',
+        'S blendet das Scratchpad mit diesem Terminal ein und aus, Esc verlässt vorher die Eingabe.'
       );
     }
     case 'whoami':
@@ -484,6 +485,9 @@ export function createTerminal(ctx: Omit<TerminalContext, 'clear'>): Terminal {
       input.value = text;
       input.focus({ preventScroll: true });
     },
-    focus: () => input.focus({ preventScroll: true }),
+    focus() {
+      input.focus({ preventScroll: true });
+      toBottom();
+    },
   };
 }

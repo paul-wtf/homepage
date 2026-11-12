@@ -33,6 +33,8 @@ const STAGGER = 55;
 const POP_DELAY = 140;
 const SLIDE_MS = 420;
 const CLOSE_MS = 180;
+const OVERVIEW_COLS = 3;
+const OVERVIEW_LABEL = 34;
 const MODE_KEY = 'paulwtf:mode';
 const SEEN_KEY = 'paulwtf:keybinds-seen';
 const INTERACTIVE = 'button, a, input, textarea, select, [contenteditable]';
@@ -81,6 +83,14 @@ export function initDesktop(): DesktopApi {
   let spaces: Workspace[] = [];
   let keybindsShown = false;
   let clearTimer = 0;
+  let overview = false;
+  let overviewTimer = 0;
+  let cells: HTMLButtonElement[] = [];
+  const overviewEl = document.createElement('div');
+  overviewEl.className = 'wm-overview';
+  overviewEl.setAttribute('role', 'group');
+  overviewEl.setAttribute('aria-label', wm.dataset.overviewLabel ?? '');
+  overviewEl.hidden = true;
   let stopScrollFocus: (() => void) | null = initScrollFocus();
   const lock = createLock();
   const terminals = new Map<HTMLElement, Terminal>();
@@ -134,7 +144,21 @@ export function initDesktop(): DesktopApi {
       space.wins.push(el);
       space.layer.append(el);
     }
-    wm.replaceChildren(...layers);
+    cells = links.map((a, i) => {
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'wm-cell';
+      cell.dataset.ws = String(i + 1);
+      const label = document.createElement('span');
+      label.className = 'wm-cell-label';
+      label.textContent = `${i + 1} ${a.querySelector('.label')?.textContent ?? ''}`;
+      cell.append(label);
+      cell.addEventListener('click', () => closeOverview(i + 1));
+      return cell;
+    });
+    overviewEl.replaceChildren(...cells);
+    overviewEl.hidden = true;
+    wm.replaceChildren(...layers, overviewEl);
   }
 
   function outerArea(): { outer: Rect; gapIn: number } {
@@ -165,6 +189,108 @@ export function initDesktop(): DesktopApi {
       el.style.width = `${r.w}px`;
       el.style.height = `${r.h}px`;
     });
+  }
+
+  function overviewGrid(): { scale: number; at(i: number): { x: number; y: number } } {
+    const { outer, gapIn } = outerArea();
+    const rows = Math.ceil(WORKSPACES / OVERVIEW_COLS);
+    const gap = gapIn * 2;
+    const W = wm.clientWidth;
+    const H = wm.clientHeight;
+    const scale = Math.min(
+      (outer.w - (OVERVIEW_COLS - 1) * gap) / (OVERVIEW_COLS * W),
+      (outer.h - (rows - 1) * gap - rows * OVERVIEW_LABEL) / (rows * H)
+    );
+    const w = W * scale;
+    const h = H * scale + OVERVIEW_LABEL;
+    const left = (W - OVERVIEW_COLS * w - (OVERVIEW_COLS - 1) * gap) / 2;
+    const top = (H - rows * h - (rows - 1) * gap) / 2;
+    return {
+      scale,
+      at: (i) => ({ x: left + (i % OVERVIEW_COLS) * (w + gap), y: top + Math.floor(i / OVERVIEW_COLS) * (h + gap) }),
+    };
+  }
+
+  // Every layer keeps its size and is scaled into its cell. Zoomed on a cell, that layer fills
+  // the screen again and the others lie outside of it, so opening and closing is one zoom.
+  function placeOverview(zoomOn: number | null): void {
+    const grid = overviewGrid();
+    const origin = zoomOn === null ? null : grid.at(zoomOn - 1);
+    wm.style.setProperty('--overview-scale', String(grid.scale));
+    wm.style.setProperty('--overview-label', `${OVERVIEW_LABEL}px`);
+    spaces.forEach((space, i) => {
+      const { x, y } = grid.at(i);
+      space.layer.style.transform = origin
+        ? `translate(${(x - origin.x) / grid.scale}px, ${(y - origin.y) / grid.scale}px)`
+        : `translate(${x}px, ${y}px) scale(${grid.scale})`;
+      const cell = cells[i];
+      if (!cell) return;
+      cell.style.left = `${x}px`;
+      cell.style.top = `${y}px`;
+      cell.style.width = `${wm.clientWidth * grid.scale}px`;
+      cell.style.height = `${wm.clientHeight * grid.scale + OVERVIEW_LABEL}px`;
+    });
+  }
+
+  function openOverview(): void {
+    if (!on || overview) return;
+    clearTimeout(overviewTimer);
+    overview = true;
+    spaces.forEach((space, i) => {
+      layout(i + 1);
+      space.layer.style.transition = 'none';
+      space.layer.classList.remove('is-parked');
+      space.layer.inert = true;
+      cells[i]?.classList.toggle('is-empty', space.wins.length === 0);
+      space.layer.classList.toggle('is-empty', space.wins.length === 0);
+      if (i + 1 === cur) cells[i]?.setAttribute('aria-current', 'true');
+      else cells[i]?.removeAttribute('aria-current');
+    });
+    placeOverview(cur);
+    void wm.offsetWidth;
+    for (const space of spaces) space.layer.style.transition = '';
+    placeOverview(null);
+    wm.classList.add('is-overview');
+    overviewEl.hidden = false;
+    cells[cur - 1]?.focus({ preventScroll: true });
+  }
+
+  function closeOverview(n = cur): void {
+    if (!overview || !ws(n)) return;
+    overview = false;
+    cur = n;
+    wm.classList.remove('is-overview');
+    overviewEl.hidden = true;
+    for (const space of spaces) space.layer.inert = false;
+    placeOverview(n);
+    const settle = () => {
+      if (overview) return;
+      spaces.forEach((space, i) => {
+        space.layer.style.transition = 'none';
+        space.layer.style.transform = '';
+        space.layer.classList.toggle('is-parked', i + 1 !== cur);
+        space.layer.classList.remove('is-empty');
+        void space.layer.offsetWidth;
+        space.layer.style.transition = '';
+      });
+    };
+    if (ms(SLIDE_MS) === 0) settle();
+    else overviewTimer = window.setTimeout(settle, SLIDE_MS);
+    const space = ws(cur);
+    setFocus(space?.focus ?? space?.wins[0]);
+    refreshBar();
+  }
+
+  function moveCell(dx: number, dy: number): void {
+    const i = cells.indexOf(document.activeElement as HTMLButtonElement);
+    if (i < 0) {
+      cells[cur - 1]?.focus({ preventScroll: true });
+      return;
+    }
+    const col = (i % OVERVIEW_COLS) + dx;
+    const next = i + dx + dy * OVERVIEW_COLS;
+    if (col < 0 || col >= OVERVIEW_COLS || !cells[next]) return;
+    cells[next].focus({ preventScroll: true });
   }
 
   function setFocus(el: HTMLElement | null | undefined, moveDom = true): void {
@@ -250,6 +376,10 @@ export function initDesktop(): DesktopApi {
   function leave(remember = true): void {
     if (!on) return;
     on = false;
+    overview = false;
+    clearTimeout(overviewTimer);
+    wm.classList.remove('is-overview');
+    overviewEl.hidden = true;
     launcher.close();
     lock.disarm();
     if (remember) writeStore(MODE_KEY, 'scroll');
@@ -274,6 +404,10 @@ export function initDesktop(): DesktopApi {
   function go(n: number): void {
     const from = ws(cur);
     const to = ws(n);
+    if (overview) {
+      closeOverview(n);
+      return;
+    }
     if (!on || n === cur || !from || !to) return;
     const dir = n > cur ? 1 : -1;
     const prev = cur;
@@ -504,6 +638,14 @@ export function initDesktop(): DesktopApi {
       return;
     } else if (/^[1-6]$/.test(k)) {
       go(Number(k));
+    } else if (k === 'tab') {
+      if (e.shiftKey || (!overview && (e.target as Element | null)?.closest?.(INTERACTIVE))) return;
+      if (overview) closeOverview();
+      else openOverview();
+    } else if (overview) {
+      if (k === 'escape') closeOverview();
+      else if (directions[k]) moveCell(...directions[k]);
+      else if (k !== 'enter' || !e.shiftKey) return;
     } else if (k === 'escape') {
       leave();
     } else if (k === 'enter' && e.shiftKey) {
@@ -539,7 +681,13 @@ export function initDesktop(): DesktopApi {
   });
 
   new ResizeObserver(() => {
-    if (on) layout(cur);
+    if (!on) return;
+    if (!overview) {
+      layout(cur);
+      return;
+    }
+    spaces.forEach((_, i) => layout(i + 1));
+    placeOverview(null);
   }).observe(wm);
 
   const sync = () => {

@@ -1,6 +1,7 @@
 ---
 const keys = [
   { keys: ['1', '–', '6'], action: 'Workspace wechseln' },
+  { keys: ['Tab'], action: 'Übersicht aller Workspaces' },
   { keys: ['h', 'j', 'k', 'l'], action: 'Fokus bewegen (auch Pfeiltasten)' },
   { keys: ['Enter'], action: 'Terminal öffnen' },
   { keys: ['Shift', 'Enter'], action: 'Launcher öffnen' },
@@ -10,7 +11,7 @@ const keys = [
   { keys: ['Esc', 'D'], action: 'zurück zur Seite' },
 ];
 ---
-<div class="wm" data-wm></div>
+<div class="wm" data-wm data-overview-label="Workspace-Übersicht"></div>
 
 <div class="lock" data-lock role="dialog" aria-label="Sperrbildschirm" tabindex="-1" hidden>
   <p class="lock-time" data-lock-time></p>
@@ -101,9 +102,55 @@ const keys = [
   .wm-layer {
     position: absolute;
     inset: 0;
-    transition: transform var(--dur-slide) var(--ease-out);
+    transform-origin: 0 0;
+    border-radius: calc(var(--r-window) / var(--overview-scale, 1));
+    transition:
+      transform var(--dur-slide) var(--ease-out),
+      background-color var(--dur-slide) var(--ease-out);
   }
   .wm-layer.is-parked { visibility: hidden; }
+  .wm.is-overview .wm-layer { background-color: var(--mantle); }
+  .wm.is-overview .wm-layer.is-empty { background-color: var(--crust); }
+
+  .wm-overview[hidden] { display: none; }
+  .wm-overview { animation: lock-in var(--dur) var(--ease-out); }
+  .wm-cell {
+    position: absolute;
+    z-index: 10;
+    display: flex;
+    align-items: flex-end;
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-window);
+    background: none;
+    color: var(--subtext0);
+    font: inherit;
+    font-size: 0.82rem;
+    text-align: left;
+    cursor: pointer;
+  }
+  .wm-cell::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 var(--overview-label);
+    border-radius: var(--r-window);
+    transition: box-shadow var(--dur-fast) var(--ease);
+  }
+  .wm-cell:hover::before { box-shadow: 0 0 0 2px var(--surface1); }
+  .wm-cell[aria-current='true']::before,
+  .wm-cell:focus-visible::before { box-shadow: 0 0 0 2px var(--teal); }
+  .wm-cell:focus-visible { outline: none; }
+  .wm-cell-label {
+    padding: 0.15rem 0.6rem;
+    border-radius: var(--r-chip);
+  }
+  .wm-cell:hover .wm-cell-label { color: var(--text); }
+  .wm-cell.is-empty .wm-cell-label { color: var(--overlay0); }
+  .wm-cell[aria-current='true'] .wm-cell-label {
+    background: var(--teal);
+    color: var(--crust);
+    font-weight: 700;
+  }
 
   .wm-window {
     position: absolute;
@@ -144,7 +191,9 @@ const keys = [
   @media (prefers-reduced-motion: reduce) {
     main,
     .wm-layer,
+    .wm-cell::before,
     .wm-window { transition: none; }
+    .wm-overview { animation: none; }
   }
 
   .wm-window .path {

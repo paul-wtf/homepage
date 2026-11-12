@@ -429,6 +429,178 @@ const keys = [
     margin-top: 0.8rem;
   }
 
+  .wm-window .til > li { margin-bottom: 1rem; }
+  .wm-window .til > li:last-child { margin-bottom: 0; }
+  .wm-window .til time {
+    display: block;
+    margin-bottom: 0.15rem;
+    color: var(--overlay2);
+    font-size: 0.74rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .wm-window .til p { margin: 0; }
+  .wm-window .til code {
+    padding: 0 0.3rem;
+    border-radius: var(--r-chip);
+    background: var(--surface0);
+    color: var(--text);
+    font-size: 0.82em;
+  }
+  .wm-window .til strong { color: var(--text); }
+  .wm-window .til .source {
+    display: inline-block;
+    margin-top: 0.2rem;
+  }
+
+  .wm-window .releases > li { margin-bottom: 1.1rem; }
+  .wm-window .release-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem 0.9rem;
+    margin-bottom: 0.35rem;
+  }
+  .wm-window .release .tag {
+    color: var(--text);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .wm-window .release .tag:hover { color: var(--teal); }
+  .wm-window .release time {
+    color: var(--overlay2);
+    font-size: 0.76rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .wm-window .changes li {
+    display: grid;
+    grid-template-columns: 4ch minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.2rem;
+  }
+  .wm-window .changes .kind {
+    color: var(--overlay2);
+    font-size: 0.74rem;
+    line-height: inherit;
+  }
+  .wm-window .changes .scope {
+    display: inline-block;
+    margin-right: 0.5rem;
+    padding: 0 0.45rem;
+    border-radius: var(--r-chip);
+    background: var(--surface0);
+    color: var(--subtext1);
+    font-size: 0.7rem;
+  }
+  .wm-window .release .maintenance {
+    margin: 0;
+    color: var(--overlay2);
+    font-size: 0.8rem;
+  }
+  .wm-window .changelog > .repo { display: inline-block; }
+
+  .wm-window .cluster [hidden] { display: none; }
+  .wm-window .cluster-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem 1.8rem;
+    margin: 0 0 1.2rem;
+  }
+  .wm-window .cluster-stats > div {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+  .wm-window .cluster-stats dt,
+  .wm-window .cluster-total .label {
+    color: var(--overlay2);
+    font-size: 0.74rem;
+    text-transform: lowercase;
+  }
+  .wm-window .cluster-stats dd {
+    margin: 0;
+    color: var(--text);
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .wm-window .cluster-table {
+    display: grid;
+    grid-template-columns: 0.5rem max-content max-content minmax(3rem, 1fr) max-content;
+    gap: 0.5rem 0.75rem;
+    margin-bottom: 1.2rem;
+    font-size: 0.85rem;
+  }
+  .wm-window .cluster-nodes { display: contents; }
+  .wm-window .cluster-nodes li,
+  .wm-window .cluster-total {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+  }
+  .wm-window .cluster-total { margin-top: 0.35rem; }
+  .wm-window .cluster-total .label { grid-column: 1 / 4; }
+  .wm-window .cluster .dot {
+    grid-column: 1;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--surface1);
+  }
+  .wm-window .cluster .dot[data-ready='true'] { background: var(--green); }
+  .wm-window .cluster .dot[data-ready='false'] { background: var(--red); }
+  .wm-window .cluster .name { grid-column: 2; color: var(--text); }
+  .wm-window .cluster .up {
+    grid-column: 3;
+    color: var(--overlay2);
+    font-size: 0.76rem;
+  }
+  .wm-window .cluster .track {
+    grid-column: 4;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--surface0);
+    overflow: hidden;
+  }
+  .wm-window .cluster .bar {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--teal);
+  }
+  .wm-window .cluster .bar[data-level='high'] { background: var(--red); }
+  .wm-window .cluster .amount {
+    grid-column: 5;
+    color: var(--overlay2);
+    font-size: 0.76rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  @container (max-width: 520px) {
+    .wm-window .cluster-table { grid-template-columns: 0.5rem max-content minmax(3rem, 1fr) max-content; }
+    .wm-window .cluster-nodes li { row-gap: 0.3rem; }
+    .wm-window .cluster .up { grid-column: 3 / 5; }
+    .wm-window .cluster-nodes .track { grid-column: 3; grid-row: 2; }
+    .wm-window .cluster-nodes .amount { grid-column: 4; grid-row: 2; }
+    .wm-window .cluster-total .label { grid-column: 1 / 3; }
+    .wm-window .cluster-total .track { grid-column: 3; }
+    .wm-window .cluster-total .amount { grid-column: 4; }
+  }
+  .wm-window .cluster-temps dl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 1.6rem;
+    margin: 0;
+    font-size: 0.85rem;
+  }
+  .wm-window .cluster-temps dl > div { display: flex; gap: 0.6rem; }
+  .wm-window .cluster-temps dt { color: var(--overlay2); }
+  .wm-window .cluster-temps dd {
+    margin: 0;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
   .wm-window .fetch {
     display: grid;
     grid-template-columns: auto 1fr;

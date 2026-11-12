@@ -6,6 +6,7 @@ import { nixLogo, tools } from '../../data/tools';
 import { ui } from '../../data/ui';
 import { lang } from '../lang';
 import type { Status } from '../live/status';
+import { bytes, share, stats, storage, temps, uptime } from '../live/cluster';
 import { FLAVORS, currentFlavor, isFlavor, setFlavor } from '../theme';
 
 export type TermOutput = { text: string; tone?: 'err' | 'ok' }[];
@@ -58,6 +59,9 @@ const COMMANDS: [string, string][] = [
   ['nowplaying', t.commands.nowplaying],
   ['uptime', t.commands.uptime],
   ['htop', t.commands.htop],
+  ['homelab', t.commands.homelab],
+  ['changelog', t.commands.changelog],
+  ['til', t.commands.til],
   ['weather', t.commands.weather],
   ['linkhop <url>', t.commands.linkhop],
   ['theme <flavor>', t.commands.theme],
@@ -262,6 +266,69 @@ function htop(status: Status | null): TermOutput {
   );
 }
 
+function homelab(status: Status | null): TermOutput {
+  const c = status?.cluster;
+  if (!c) return lines(`homelab: ${t.unavailable}`);
+  const cl = ui[lang].cluster;
+  const summary = stats(c);
+  const kube = summary.filter(([label]) => label === cl.kubernetes);
+  const counts = summary.filter(([label]) => label !== cl.kubernetes);
+  const pair = ([label, value]: [string, string]) => `${label} ${value}`;
+  const name = Math.max(cl.total.length, ...c.nodes.map((n) => n.name.length));
+  const up = Math.max(0, ...c.nodes.map((n) => (n.uptime_s === null ? 0 : cl.up(uptime(n.uptime_s)).length)));
+  const meterOf = (s: [number, number] | null) => {
+    if (!s) return '';
+    const filled = Math.round((share(...s) / 100) * BAR_WIDTH);
+    return `[${'|'.repeat(filled).padEnd(BAR_WIDTH)}]  ${bytes(s[0])} / ${bytes(s[1])}`;
+  };
+  const rows = c.nodes.map((n) =>
+    [n.name.padEnd(name), (n.uptime_s === null ? '' : cl.up(uptime(n.uptime_s))).padEnd(up), meterOf(storage(n.storage_used, n.storage_total))]
+      .join('  ')
+      .trimEnd()
+  );
+  const total = storage(c.storage_used, c.storage_total);
+  const heat = temps(c);
+  return lines(
+    ...(counts.length ? [counts.map(pair).join(' · ')] : []),
+    ...kube.map(pair),
+    ...rows,
+    ...(total ? [[cl.total.padEnd(name), ''.padEnd(up), meterOf(total)].join('  ')] : []),
+    ...(heat.length ? [heat.map(pair).join(' · ')] : [])
+  );
+}
+
+const text = (el: Element | null | undefined): string => el?.textContent?.trim() ?? '';
+
+function changelog(): TermOutput {
+  const tpl = document.querySelector<HTMLTemplateElement>('template[data-changelog]');
+  if (!tpl) return lines(`changelog: ${t.unavailable}`);
+  const width = Math.max(...Object.values(ui[lang].changelog.kinds).map((k) => k.length));
+  const out: string[] = [];
+  for (const r of tpl.content.querySelectorAll('.release')) {
+    if (out.length) out.push('');
+    out.push([text(r.querySelector('.tag')), text(r.querySelector('time'))].filter(Boolean).join('  '));
+    const changes = [...r.querySelectorAll('.changes li')];
+    if (changes.length === 0) out.push(`  ${text(r.querySelector('.maintenance'))}`);
+    for (const c of changes) {
+      const scope = text(c.querySelector('.scope'));
+      out.push(`  ${text(c.querySelector('.kind')).padEnd(width)}  ${scope ? `${scope}: ` : ''}${text(c.querySelector('.subject'))}`);
+    }
+  }
+  return lines(...out);
+}
+
+function til(): TermOutput {
+  const tpl = document.querySelector<HTMLTemplateElement>('template[data-window][data-path="~/til"]');
+  if (!tpl) return lines(`til: ${t.unavailable}`);
+  return lines(
+    ...[...tpl.content.querySelectorAll('.til > li')].flatMap((li) => {
+      const date = text(li.querySelector('time'));
+      const link = li.querySelector<HTMLAnchorElement>('a.source')?.href;
+      return [`${date}  ${text(li.querySelector('p'))}`, ...(link ? [`${' '.repeat(date.length + 2)}${link}`] : [])];
+    })
+  );
+}
+
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const https = (v: unknown): string | null => (typeof v === 'string' && v.startsWith('https://') ? v : null);
 
@@ -357,6 +424,12 @@ export function run(line: string, ctx: TerminalContext): TermOutput | Promise<Te
       return live(cmd, ctx.live());
     case 'htop':
       return htop(ctx.live());
+    case 'homelab':
+      return homelab(ctx.live());
+    case 'changelog':
+      return changelog();
+    case 'til':
+      return til();
     case 'linkhop':
       return linkhop(args[0]);
     case 'theme':

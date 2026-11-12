@@ -50,12 +50,40 @@ class Week(BaseModel):
     url: str
 
 
+class ClusterNode(BaseModel):
+    name: str
+    ready: bool | None = None
+    uptime_s: int | None = None
+    storage_used: int | None = None
+    storage_total: int | None = None
+
+
+class Kubernetes(BaseModel):
+    version: str
+    distribution: str | None = None
+
+
+class Cluster(BaseModel):
+    nodes_total: int | None = None
+    nodes_ready: int | None = None
+    pods: int | None = None
+    workloads: int | None = None
+    services: int | None = None
+    kubernetes: Kubernetes | None = None
+    nodes: list[ClusterNode] = []
+    storage_used: int | None = None
+    storage_total: int | None = None
+    cpu_temp_c: float | None = None
+    nvme_temp_c: float | None = None
+
+
 class Status(BaseModel):
     music: Music | None = None
     server: Server | None = None
     weather: Weather | None = None
     projects: dict[str, Literal["up", "down"]] | None = None
     week: Week | None = None
+    cluster: Cluster | None = None
     generated_at: datetime
 
     @field_serializer("generated_at")

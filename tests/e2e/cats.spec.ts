@@ -25,7 +25,7 @@ test.describe('cat <katze>', () => {
 
   test('cat eddy prints his line and opens his photo', async ({ page }) => {
     await openTerminal(page);
-    await expect(page.locator('.wm-layer[data-ws="1"] .wm-window')).toHaveCount(3);
+    await expect(page.locator('.wm-layer[data-ws="1"] .wm-window')).toHaveCount(4);
     await run(page, 'cat eddy');
     await expect(term(page)).toContainText('Eddy: Liebenswert, aber stur. Bekommt immer was er will.');
     const win = page.locator('.wm-layer[data-ws="1"] .wm-window[aria-label="Eddy"]');
@@ -34,7 +34,7 @@ test.describe('cat <katze>', () => {
     const img = win.locator('img');
     await expect(img).toHaveAttribute('alt', 'Katze Eddy');
     await expect.poll(() => img.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
-    await expect(page.locator('.wm-layer[data-ws="1"] .wm-window')).toHaveCount(4);
+    await expect(page.locator('.wm-layer[data-ws="1"] .wm-window')).toHaveCount(5);
     await expect(input(page)).toBeFocused();
   });
 

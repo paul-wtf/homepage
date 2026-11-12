@@ -46,12 +46,35 @@ export interface Week {
   url: string;
 }
 
+export interface ClusterNode {
+  name: string;
+  ready: boolean | null;
+  uptime_s: number | null;
+  storage_used: number | null;
+  storage_total: number | null;
+}
+
+export interface Cluster {
+  nodes_total: number | null;
+  nodes_ready: number | null;
+  pods: number | null;
+  workloads: number | null;
+  services: number | null;
+  kubernetes: { version: string; distribution: string | null } | null;
+  nodes: ClusterNode[];
+  storage_used: number | null;
+  storage_total: number | null;
+  cpu_temp_c: number | null;
+  nvme_temp_c: number | null;
+}
+
 export interface Status {
   music: Music | null;
   server: Server | null;
   weather: Weather | null;
   projects: Record<string, ProjectState> | null;
   week: Week | null;
+  cluster: Cluster | null;
   generated_at: string;
 }
 
@@ -76,6 +99,7 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const isStr = (v: unknown): v is string => typeof v === 'string';
 const strOrNull = (v: unknown): string | null => (isStr(v) && v ? v : null);
+const numOrNull = (v: unknown): number | null => (isNum(v) ? v : null);
 const httpsOrNull = (v: unknown): string | null => (isStr(v) && v.startsWith('https://') ? v : null);
 
 function music(v: unknown): Music | null {
@@ -139,6 +163,37 @@ function week(v: unknown): Week | null {
   };
 }
 
+function clusterNode(v: unknown): ClusterNode | null {
+  if (!isObj(v) || !isStr(v.name) || !v.name) return null;
+  return {
+    name: v.name,
+    ready: typeof v.ready === 'boolean' ? v.ready : null,
+    uptime_s: numOrNull(v.uptime_s),
+    storage_used: numOrNull(v.storage_used),
+    storage_total: numOrNull(v.storage_total),
+  };
+}
+
+function cluster(v: unknown): Cluster | null {
+  if (!isObj(v)) return null;
+  const k = v.kubernetes;
+  const c: Cluster = {
+    nodes_total: numOrNull(v.nodes_total),
+    nodes_ready: numOrNull(v.nodes_ready),
+    pods: numOrNull(v.pods),
+    workloads: numOrNull(v.workloads),
+    services: numOrNull(v.services),
+    kubernetes: isObj(k) && isStr(k.version) && k.version ? { version: k.version, distribution: strOrNull(k.distribution) } : null,
+    nodes: Array.isArray(v.nodes) ? v.nodes.map(clusterNode).filter((n): n is ClusterNode => n !== null) : [],
+    storage_used: numOrNull(v.storage_used),
+    storage_total: numOrNull(v.storage_total),
+    cpu_temp_c: numOrNull(v.cpu_temp_c),
+    nvme_temp_c: numOrNull(v.nvme_temp_c),
+  };
+  const known = Object.values(c).some((x) => (Array.isArray(x) ? x.length > 0 : x !== null));
+  return known ? c : null;
+}
+
 function parse(v: unknown): Status {
   if (!isObj(v)) throw new TypeError('status is not an object');
   return {
@@ -147,6 +202,7 @@ function parse(v: unknown): Status {
     weather: weather(v.weather),
     projects: projects(v.projects),
     week: week(v.week),
+    cluster: cluster(v.cluster),
     generated_at: isStr(v.generated_at) ? v.generated_at : '',
   };
 }

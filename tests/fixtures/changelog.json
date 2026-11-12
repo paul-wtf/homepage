@@ -1,0 +1,19 @@
+[
+  {
+    "tag": "v9.3.0",
+    "base": "v9.2.1",
+    "date": "2026-11-10T09:30:00Z",
+    "changes": [
+      { "type": "feat", "scope": "desktop", "subject": "fixture window with a launcher entry" },
+      { "type": "feat", "scope": null, "subject": "fixture feature without a scope" },
+      { "type": "fix", "scope": "bar", "subject": "fixture fix for the bar" }
+    ]
+  },
+  { "tag": "v9.2.1", "base": "v9.2.0", "date": "2026-10-28T18:05:00Z", "changes": [] },
+  {
+    "tag": "v9.2.0",
+    "base": "v9.1.0",
+    "date": "2026-10-20T07:00:00Z",
+    "changes": [{ "type": "perf", "scope": "api", "subject": "fixture speedup" }]
+  }
+]

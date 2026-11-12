@@ -61,6 +61,13 @@ async def _range(
 
 
 async def _get(client: httpx.AsyncClient, url: str, params: dict) -> list[dict]:
+    series = await query_series(client, url, params)
+    if not series:
+        raise RuntimeError("Prometheus returned no data")
+    return series
+
+
+async def query_series(client: httpx.AsyncClient, url: str, params: dict) -> list[dict]:
     try:
         resp = await client.get(url, params=params)
         resp.raise_for_status()
@@ -71,7 +78,4 @@ async def _get(client: httpx.AsyncClient, url: str, params: dict) -> list[dict]:
         raise RuntimeError(f"Prometheus request failed: {type(exc).__name__}") from None
     if body.get("status") != "success":
         raise RuntimeError(f"Prometheus query failed: {body.get('errorType', 'unknown')}")
-    series = body.get("data", {}).get("result") or []
-    if not series:
-        raise RuntimeError("Prometheus returned no data")
-    return series
+    return body.get("data", {}).get("result") or []

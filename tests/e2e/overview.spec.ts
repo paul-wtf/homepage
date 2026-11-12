@@ -160,6 +160,7 @@ test.describe('workspace overview', () => {
     await enterDesktop(page);
     await page.keyboard.press('3');
     await page.keyboard.press('q');
+    await page.keyboard.press('q');
     await expect(layer(page, 3).locator('.wm-window')).toHaveCount(0);
     await page.keyboard.press('1');
     await page.keyboard.press('Tab');
@@ -178,7 +179,7 @@ test.describe('workspace overview', () => {
     await page.keyboard.press('?');
     await page.keyboard.press('Shift+Enter');
     await expect(wm(page)).toHaveClass(/is-overview/);
-    await expect(layer(page, 1).locator('.wm-window')).toHaveCount(2);
+    await expect(layer(page, 1).locator('.wm-window')).toHaveCount(3);
     await expect(page.locator('.wm-window.is-full')).toHaveCount(0);
     await expect(page.locator('[data-launcher]')).toBeHidden();
     await page.keyboard.press('d');

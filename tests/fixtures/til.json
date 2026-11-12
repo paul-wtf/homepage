@@ -1,0 +1,15 @@
+[
+  {
+    "date": "2026-11-03",
+    "text": { "en": "Fixture entry in English only, with `inline code`." }
+  },
+  {
+    "date": "2026-11-11",
+    "text": {
+      "de": "Fixture-Eintrag auf Deutsch mit **fett** und [einem Link](https://example.org/de).",
+      "en": "Fixture entry in English with **bold** and [a link](https://example.org/en)."
+    },
+    "link": "https://www.example.org/source"
+  },
+  { "date": "2026-10-01", "text": "Fixture entry with <b>markup</b> that stays text." }
+]

@@ -14,7 +14,11 @@ export default defineConfig({
       ? 'pnpm preview --port 4322'
       : 'pnpm build && pnpm preview --port 4322',
     url: 'http://localhost:4322',
-    env: { PROJECT_META_FILE: 'tests/fixtures/project-meta.json' },
+    env: {
+      PROJECT_META_FILE: 'tests/fixtures/project-meta.json',
+      CHANGELOG_FILE: 'tests/fixtures/changelog.json',
+      TIL_FILE: 'tests/fixtures/til.json',
+    },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

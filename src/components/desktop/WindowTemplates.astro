@@ -4,7 +4,9 @@ import portrait from '../../assets/profilepicture.png';
 import { about } from '../../data/about';
 import { projects } from '../../data/projects';
 import { previews } from '../../data/previews';
-import { projectMeta } from '../../data/github';
+import { commitDate, projectMeta } from '../../data/github';
+import { changelog, compareUrl, REPO } from '../../data/changelog';
+import { loadTil } from '../../data/til-load';
 import ProjectMeta from '../ProjectMeta.astro';
 import { tools, palette } from '../../data/tools';
 import NixLogo from '../NixLogo.astro';
@@ -30,6 +32,8 @@ const home = {
 const featured = projects.filter((p) => p.featured);
 const others = projects.filter((p) => !p.featured);
 const meta = await projectMeta();
+const releases = await changelog();
+const til = loadTil(lang);
 const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   (typeof contacts)[number]['kind'],
   (typeof contacts)[number]
@@ -46,6 +50,22 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   <span class="path">{`${home.about}/portrait`}</span>
   <Image src={portrait} alt={t.hero.portraitAlt} width={480} height={480} decoding="async" />
 </template>
+
+{til.length > 0 && (
+  <template data-window data-ws="1" data-label={t.windows.til} data-path="~/til">
+    <span class="path">~/til</span>
+    <h3>{t.windows.til}</h3>
+    <ol class="plain til">
+      {til.map((e) => (
+        <li>
+          <time datetime={e.date}>{commitDate(e.date, lang)}</time>
+          <p set:html={e.html} />
+          {e.link && <a class="repo source" href={e.link} target="_blank" rel="noopener noreferrer">{e.host} ↗</a>}
+        </li>
+      ))}
+    </ol>
+  </template>
+)}
 
 {featured.map((p) => (
   <template data-window data-ws="2" data-label={p.name} data-path={`${home.projects}/${p.name}`}>
@@ -113,6 +133,38 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   </div>
 </template>
 
+{releases && (
+  <template data-window data-changelog data-ws="3" data-label={t.windows.changelog} data-path="~/tools/changelog">
+    <span class="path">~/tools/changelog</span>
+    <div class="changelog">
+      <h3>{t.changelog.title}</h3>
+      <ol class="plain releases">
+        {releases.map((r) => (
+          <li class="release">
+            <div class="release-head">
+              <a class="tag" href={compareUrl(r)} target="_blank" rel="noopener noreferrer" aria-label={t.changelog.compare(r.tag)}>{r.tag}</a>
+              {r.date && <time datetime={r.date}>{commitDate(r.date, lang)}</time>}
+            </div>
+            {r.changes.length > 0 ? (
+              <ul class="plain changes">
+                {r.changes.map((c) => (
+                  <li data-type={c.type}>
+                    <span class="kind">{t.changelog.kinds[c.type]}</span>
+                    <span class="text">{c.scope && <span class="scope">{c.scope}</span>}<span class="subject">{c.subject}</span></span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p class="maintenance">{t.changelog.maintenance}</p>
+            )}
+          </li>
+        ))}
+      </ol>
+      <a class="repo" href={`https://github.com/${REPO}/tags`} target="_blank" rel="noopener noreferrer">{t.changelog.all}</a>
+    </div>
+  </template>
+)}
+
 <template data-window data-ws="4" data-label="Workstation" data-path="~/hardware/workstation">
   <span class="path">~/hardware/workstation</span>
   <h3 class="card-title">workstation</h3>
@@ -124,6 +176,22 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
       </ul>
     </div>
   ))}
+</template>
+
+<template data-window data-needs="cluster" data-ws="4" data-label={t.windows.homelab} data-path="~/hardware/homelab">
+  <span class="path">~/hardware/homelab</span>
+  <div class="cluster" data-cluster>
+    <h3 class="card-title">homelab</h3>
+    <dl class="cluster-stats" data-cluster-stats></dl>
+    <div class="cluster-table">
+      <ul class="plain cluster-nodes" data-cluster-nodes></ul>
+      <div class="cluster-total" data-cluster-total hidden></div>
+    </div>
+    <div class="cluster-temps" data-cluster-temps hidden>
+      <span class="cat-label">{t.cluster.temps}</span>
+      <dl></dl>
+    </div>
+  </div>
 </template>
 
 <template data-window data-ws="4" data-label="Laptop" data-path="~/hardware/laptop">

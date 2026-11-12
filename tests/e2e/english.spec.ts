@@ -158,9 +158,9 @@ test.describe('english desktop mode', () => {
 
   test('windows, paths and workspaces', async ({ page }) => {
     await desktop(page);
-    await expect(layer(page, 1).locator('.wm-window')).toHaveCount(2);
+    await expect(layer(page, 1).locator('.wm-window')).toHaveCount(3);
     await expect(layer(page, 1).locator('.wm-window').first()).toHaveAttribute('aria-label', 'About');
-    await expect(layer(page, 1).locator('.path')).toHaveText(['~/about', '~/about/portrait']);
+    await expect(layer(page, 1).locator('.path')).toHaveText(['~/about', '~/about/portrait', '~/til']);
     await page.keyboard.press('2');
     await expect(layer(page, 2).locator('.path')).toHaveText(['~/projects/linkhop', '~/projects/tidalwave', '~/projects']);
     await expect(layer(page, 2)).toContainText('Custom plugins for Tidal Luna.');
@@ -227,7 +227,7 @@ test.describe('english desktop mode', () => {
     await expect(page.locator('.wm-cell')).toHaveText(['1 about', '2 projects', '3 tools', '4 hardware', '5 sidefacts', '6 contact']);
     await page.keyboard.press('3');
     await expect(layer(page, 3)).toBeVisible();
-    await expect(layer(page, 3).locator('.wm-window')).toHaveAttribute('aria-label', 'System info');
+    await expect(layer(page, 3).locator('.wm-window').first()).toHaveAttribute('aria-label', 'System info');
   });
 
   test('the lock screen', async ({ page }) => {

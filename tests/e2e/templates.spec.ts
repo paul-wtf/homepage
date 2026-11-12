@@ -5,7 +5,7 @@ test('window templates per workspace', async ({ page }) => {
   const counts = await page.$$eval('template[data-window]', (ts) =>
     [1, 2, 3, 4, 5, 6].map((n) => ts.filter((t) => (t as HTMLElement).dataset.ws === String(n)).length)
   );
-  expect(counts).toEqual([2, 3, 1, 3, 3, 5]);
+  expect(counts).toEqual([2, 3, 1, 3, 4, 5]);
 });
 
 test('templates are in window order with a path line first', async ({ page }) => {
@@ -28,7 +28,7 @@ test('templates are in window order with a path line first', async ({ page }) =>
     '2:linkhop', '2:tidalwave', '2:Projekte',
     '3:Systeminfo',
     '4:Workstation', '4:Laptop', '4:Server',
-    '5:Pax', '5:BMW', '5:Katzen',
+    '5:Pax', '5:BMW', '5:Katzen', '5:Musik',
     '6:GitHub', '6:Discord', '6:YouTube', '6:E-Mail', '6:GPG',
   ]);
   for (const i of info) {

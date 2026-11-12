@@ -25,11 +25,33 @@ export interface Weather {
 
 export type ProjectState = 'up' | 'down';
 
+export interface WeekArtist {
+  name: string;
+  count: number;
+  image: string | null;
+}
+
+export interface WeekTrack {
+  track: string;
+  artist: string;
+  count: number;
+}
+
+export interface Week {
+  listens: number;
+  seconds: number;
+  artists: WeekArtist[];
+  tracks: WeekTrack[];
+  grid: number[][];
+  url: string;
+}
+
 export interface Status {
   music: Music | null;
   server: Server | null;
   weather: Weather | null;
   projects: Record<string, ProjectState> | null;
+  week: Week | null;
   generated_at: string;
 }
 
@@ -89,6 +111,34 @@ function projects(v: unknown): Record<string, ProjectState> | null {
   return known.length ? Object.fromEntries(known) : null;
 }
 
+function weekArtist(v: unknown): WeekArtist | null {
+  if (!isObj(v) || !isStr(v.name) || !isNum(v.count)) return null;
+  return { name: v.name, count: v.count, image: httpsOrNull(v.image) };
+}
+
+function weekTrack(v: unknown): WeekTrack | null {
+  if (!isObj(v) || !isStr(v.track) || !isStr(v.artist) || !isNum(v.count)) return null;
+  return { track: v.track, artist: v.artist, count: v.count };
+}
+
+function week(v: unknown): Week | null {
+  if (!isObj(v) || !isNum(v.listens) || !isNum(v.seconds)) return null;
+  const url = httpsOrNull(v.url);
+  const grid = v.grid;
+  if (!url || !Array.isArray(grid) || grid.length !== 7) return null;
+  if (!grid.every((row) => Array.isArray(row) && row.length === 24 && row.every(isNum))) return null;
+  const list = <T>(items: unknown, one: (x: unknown) => T | null): T[] =>
+    Array.isArray(items) ? items.map(one).filter((x): x is T => x !== null) : [];
+  return {
+    listens: v.listens,
+    seconds: v.seconds,
+    artists: list(v.artists, weekArtist),
+    tracks: list(v.tracks, weekTrack),
+    grid: grid as number[][],
+    url,
+  };
+}
+
 function parse(v: unknown): Status {
   if (!isObj(v)) throw new TypeError('status is not an object');
   return {
@@ -96,6 +146,7 @@ function parse(v: unknown): Status {
     server: server(v.server),
     weather: weather(v.weather),
     projects: projects(v.projects),
+    week: week(v.week),
     generated_at: isStr(v.generated_at) ? v.generated_at : '',
   };
 }

@@ -93,6 +93,16 @@ const de = {
     toastRecent: 'zuletzt gehört',
     toastClose: 'Benachrichtigung schließen',
   },
+  week: {
+    title: 'Meine Woche',
+    total: (listens: number, hours: number) => `${listens} Scrobbles · ${hours} Std.`,
+    artists: 'Top-Artists',
+    tracks: 'Top-Tracks',
+    grid: 'Hörzeit nach Wochentag und Stunde',
+    days: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+    trackLabel: (track: string, artist: string) => `${track} von ${artist} auf linkhop öffnen`,
+    link: 'Mehr auf tidalwave',
+  },
   desktop: {
     keys: {
       workspace: 'Workspace wechseln',
@@ -131,6 +141,7 @@ const de = {
     system: 'Systeminfo',
     cats: 'Katzen',
     email: 'E-Mail',
+    music: 'Musik',
   },
   paths: {
     about: 'über-mich',
@@ -138,6 +149,7 @@ const de = {
     car: 'auto',
     cats: 'katzen',
     contact: 'kontakt',
+    music: 'musik',
   },
   terminal: {
     inputLabel: 'Befehl',
@@ -300,6 +312,16 @@ const en: Ui = {
     toastRecent: 'last played',
     toastClose: 'Close notification',
   },
+  week: {
+    title: 'My week',
+    total: (listens, hours) => `${listens} scrobbles · ${hours} h`,
+    artists: 'Top artists',
+    tracks: 'Top tracks',
+    grid: 'Listening by weekday and hour',
+    days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    trackLabel: (track, artist) => `Open ${track} by ${artist} on linkhop`,
+    link: 'More on tidalwave',
+  },
   desktop: {
     keys: {
       workspace: 'switch workspace',
@@ -338,6 +360,7 @@ const en: Ui = {
     system: 'System info',
     cats: 'Cats',
     email: 'Email',
+    music: 'Music',
   },
   paths: {
     about: 'about',
@@ -345,6 +368,7 @@ const en: Ui = {
     car: 'car',
     cats: 'cats',
     contact: 'contact',
+    music: 'music',
   },
   terminal: {
     inputLabel: 'Command',

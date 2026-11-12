@@ -24,6 +24,7 @@ const home = {
   projects: `~/${t.paths.projects}`,
   cats: `~/sidefacts/${t.paths.cats}`,
   contact: `~/${t.paths.contact}`,
+  music: `~/sidefacts/${t.paths.music}`,
 };
 
 const featured = projects.filter((p) => p.featured);
@@ -187,6 +188,22 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
         <p>{c.personality[lang]}</p>
       </div>
     ))}
+  </div>
+</template>
+
+<template data-window data-needs="week" data-ws="5" data-label={t.windows.music} data-path={home.music}>
+  <span class="path">{home.music}</span>
+  <div class="week" data-week>
+    <div class="week-head">
+      <h3>{t.week.title}</h3>
+      <span class="meta" data-week-total></span>
+    </div>
+    <h4>{t.week.artists}</h4>
+    <ol class="plain week-artists" data-week-artists></ol>
+    <div class="week-grid" data-week-grid role="img" aria-label={t.week.grid}></div>
+    <h4>{t.week.tracks}</h4>
+    <ol class="plain week-tracks" data-week-tracks></ol>
+    <a class="repo" data-week-link href="https://tidalwave.paul.wtf" target="_blank" rel="noopener noreferrer">{t.week.link}</a>
   </div>
 </template>
 

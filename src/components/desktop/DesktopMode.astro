@@ -214,7 +214,8 @@ const keys = [
     text-transform: lowercase;
     color: var(--overlay2);
   }
-  .wm-window ul.plain {
+  .wm-window ul.plain,
+  .wm-window ol.plain {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -333,6 +334,100 @@ const keys = [
   }
   .wm-window .projects-list .desc { margin: 0.15rem 0 0.4rem; }
   .wm-window .projects-list .stack { margin: 0; }
+
+  .wm-window .week-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.2rem 1rem;
+  }
+  .wm-window .week-head h3 { margin: 0; }
+  .wm-window .week h4 {
+    margin: 0.9rem 0 0.45rem;
+    color: var(--overlay2);
+    font-size: 0.76rem;
+    font-weight: 400;
+  }
+  .wm-window .week-artists li {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) minmax(3rem, 35%) 3ch;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.35rem;
+  }
+  .wm-window .week-artists img,
+  .wm-window .week-artists .noimg {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--r-chip);
+    object-fit: cover;
+    background: var(--surface0);
+  }
+  .wm-window .week .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .wm-window .week-artists .track {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--surface0);
+    overflow: hidden;
+  }
+  .wm-window .week-artists .bar {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--teal);
+  }
+  .wm-window .week .count {
+    text-align: right;
+    color: var(--overlay2);
+    font-size: 0.76rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .wm-window .week-grid {
+    display: grid;
+    grid-template-columns: auto repeat(24, minmax(0, 1fr));
+    align-items: center;
+    gap: 2px;
+    margin-top: 1rem;
+  }
+  .wm-window .week-grid .day {
+    padding-right: 0.4rem;
+    color: var(--overlay2);
+    font-size: 0.66rem;
+    line-height: 1;
+  }
+  .wm-window .week-grid .cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: var(--surface0);
+  }
+  .wm-window .week-grid .cell[data-level='1'] { background: color-mix(in srgb, var(--teal) 30%, var(--surface0)); }
+  .wm-window .week-grid .cell[data-level='2'] { background: color-mix(in srgb, var(--teal) 55%, var(--surface0)); }
+  .wm-window .week-grid .cell[data-level='3'] { background: color-mix(in srgb, var(--teal) 78%, var(--surface0)); }
+  .wm-window .week-grid .cell[data-level='4'] { background: var(--teal); }
+  .wm-window .week-tracks li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.3rem;
+  }
+  .wm-window .week-tracks a {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.5rem;
+    min-width: 0;
+    text-decoration: none;
+  }
+  .wm-window .week-tracks .artist { color: var(--overlay2); }
+  .wm-window .week > .repo {
+    display: inline-block;
+    margin-top: 0.8rem;
+  }
 
   .wm-window .fetch {
     display: grid;

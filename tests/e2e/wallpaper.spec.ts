@@ -178,4 +178,51 @@ test.describe('wallpaper', () => {
     expect(clientWidth).toBeGreaterThan(880);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(900);
   });
+
+  test.describe('moon phase', () => {
+    const lit = (page: Page, dx: number) =>
+      page.locator('[data-moon-lit]').evaluate((path: SVGPathElement, offset) => {
+        const point = path.ownerSVGElement!.createSVGPoint();
+        point.x = 1190 + offset;
+        point.y = 300;
+        return path.isPointInFill(point);
+      }, dx);
+
+    async function nightAt(page: Page, iso: string) {
+      await page.clock.install({ time: new Date(iso) });
+      await show(page, weather(0, false));
+      await expect(wall(page)).toHaveAttribute('data-sky', 'night');
+    }
+
+    test('first quarter lights the right half', async ({ page }) => {
+      await nightAt(page, '2024-04-15T19:13:00Z');
+      expect(await lit(page, 36)).toBe(true);
+      expect(await lit(page, -36)).toBe(false);
+    });
+
+    test('last quarter lights the left half', async ({ page }) => {
+      await nightAt(page, '2024-05-01T11:27:00Z');
+      expect(await lit(page, -36)).toBe(true);
+      expect(await lit(page, 36)).toBe(false);
+    });
+
+    test('full moon lights the whole disc', async ({ page }) => {
+      await nightAt(page, '2025-09-07T18:09:00Z');
+      for (const dx of [-60, 0, 60]) expect(await lit(page, dx), String(dx)).toBe(true);
+    });
+
+    test('new moon leaves the disc dark but still there', async ({ page }) => {
+      await nightAt(page, '2024-04-08T18:21:00Z');
+      for (const dx of [-36, 0, 36]) expect(await lit(page, dx), String(dx)).toBe(false);
+      await expect(wall(page).locator('[data-moon-disc]')).toBeVisible();
+    });
+
+    test('without data the moon stays the full disc', async ({ page }) => {
+      await page.route('**/api/status', (route) => route.abort());
+      await page.goto('/');
+      await page.waitForTimeout(300);
+      await expect(wall(page).locator('[data-moon-lit]')).toBeHidden();
+      await expect(wall(page).locator('[data-moon-disc]')).toHaveCSS('opacity', '0.24');
+    });
+  });
 });

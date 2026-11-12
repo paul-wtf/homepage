@@ -19,6 +19,15 @@ pnpm build        # outputs dist/
 pnpm preview      # serves dist/ locally
 ```
 
+### Project data from GitHub
+
+`astro build` asks the GitHub API for the latest release tag and the date of the last commit of every project and renders them on the cards. A request that fails or runs into the rate limit leaves those fields out; the build still succeeds. Two environment variables change this:
+
+| Variable | Purpose |
+| --- | --- |
+| `GITHUB_TOKEN` | Sent as a bearer token, which lifts the limit of 60 unauthenticated requests per hour. The release workflow passes it to the image build as the secret `github_token`. |
+| `PROJECT_META_FILE` | Path to a JSON file used in place of the API (`{"<project name>": {"release": "…", "lastCommit": "…"}}`). The e2e tests and CI build with `tests/fixtures/project-meta.json` so they never touch the network. |
+
 ### Regenerate the project previews
 
 `Projects.astro` matches each preview to its featured project by filename

@@ -209,6 +209,21 @@ const keys = [
     text-decoration: none;
   }
   .wm-window .repo:hover { color: var(--text); }
+  .wm-window .links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.2rem 1rem;
+  }
+  .wm-window .meta {
+    color: var(--overlay2);
+    font-size: 0.76rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .wm-window .projects-list .meta {
+    display: block;
+    margin-top: 0.4rem;
+  }
   .wm-window .projects-list > li { margin-bottom: 1rem; }
   .wm-window .projects-list > li:last-child { margin-bottom: 0; }
   .wm-window .projects-list > li > a {

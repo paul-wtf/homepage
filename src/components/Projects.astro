@@ -1,18 +1,20 @@
 ---
 import { projects } from '../data/projects';
 import { previews } from '../data/previews';
+import { projectMeta } from '../data/github';
 import ProjectCard from './ProjectCard.astro';
 
 const featured = projects.filter((p) => p.featured);
 const others = projects.filter((p) => !p.featured);
+const meta = await projectMeta();
 ---
 <section id="projects" data-ws="2" class="projects section-shell" data-reveal>
   <h2 class="section-title"><span class="ws" aria-hidden="true">2</span>Projekte</h2>
 
-  {featured.map((p) => <ProjectCard project={p} preview={previews[p.name]} />)}
+  {featured.map((p) => <ProjectCard project={p} preview={previews[p.name]} meta={meta[p.name]} />)}
 
   <div class="grid">
-    {others.map((p) => <ProjectCard project={p} />)}
+    {others.map((p) => <ProjectCard project={p} meta={meta[p.name]} />)}
   </div>
 </section>
 

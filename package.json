@@ -14,20 +14,20 @@
     "capture-tidalwave-demo": "node scripts/capture-tidalwave-demo.mjs"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.10",
-    "@astrojs/sitemap": "^3.7.3",
-    "@fontsource-variable/jetbrains-mono": "^5.2.8",
-    "astro": "^7.1.6",
-    "sharp": "^0.35.3",
-    "typescript": "^5.6.0"
+    "@astrojs/check": "^0.9.12",
+    "@astrojs/sitemap": "^3.7.4",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "astro": "^7.4.11",
+    "sharp": "^0.35.5",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@playwright/test": "~1.61.1",
-    "playwright": "^1.61.1"
+    "playwright": "^1.65.0"
   },
   "pnpm": {
     "overrides": {
-      "fast-uri@<3.1.4": "3.1.4",
+      "fast-uri@<3.1.9": "3.1.9",
       "js-yaml@>=4.0.0 <4.3.0": "4.3.0",
       "svgo@>=4.0.0 <4.0.2": "4.0.2",
       "esbuild@>=0.27.3 <0.28.1": "0.28.1",

@@ -304,6 +304,7 @@ export function initDesktop(): DesktopApi {
       go,
       close: () => win && closeWindow(win),
       live: latest,
+      open: (url) => window.open(url, '_blank', 'noopener,noreferrer'),
     });
     openWindow(term);
     win = term.closest<HTMLElement>('.wm-window');

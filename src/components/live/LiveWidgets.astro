@@ -6,7 +6,7 @@
     aria-expanded="false"
     aria-controls="live-popout"
     hidden
-  ><span class="note" aria-hidden="true">♪</span><span class="live-text" data-text></span></button>
+  ><span class="note" aria-hidden="true">♪</span><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="live-text" data-text></span></button>
   <button
     type="button"
     class="live-w"
@@ -72,6 +72,30 @@
     text-overflow: ellipsis;
   }
   .note { color: var(--teal); }
+  .eq {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 0.75rem;
+    margin-left: -0.15rem;
+  }
+  .eq i {
+    width: 2px;
+    height: 100%;
+    border-radius: 1px;
+    background: var(--teal);
+    transform-origin: bottom;
+  }
+  .eq i:nth-child(1) { transform: scaleY(0.45); }
+  .eq i:nth-child(2) { transform: scaleY(0.8); }
+  .eq i:nth-child(3) { transform: scaleY(0.6); }
+  .live-w[data-state='playing'] .eq i { animation: eq 0.9s var(--ease) infinite alternate; }
+  .live-w[data-state='playing'] .eq i:nth-child(2) { animation-duration: 0.65s; animation-delay: -0.3s; }
+  .live-w[data-state='playing'] .eq i:nth-child(3) { animation-duration: 1.15s; animation-delay: -0.6s; }
+  @keyframes eq {
+    from { transform: scaleY(0.25); }
+    to { transform: scaleY(1); }
+  }
   .key { color: var(--overlay2); }
   .glyph,
   .popout :global(.glyph) { font-variant-emoji: text; }
@@ -163,6 +187,7 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .live-w { transition: none; }
+    .live-w[data-state='playing'] .eq i { animation: none; }
   }
 </style>
 
@@ -318,6 +343,7 @@
       if (name === 'music' && s?.music) {
         const m = s.music;
         if (text) text.textContent = `${m.track} · ${m.artist}`;
+        btn.dataset.state = m.state;
         label = `Musik: ${m.track} von ${m.artist}`;
       } else if (name === 'server' && s?.server) {
         if (text) text.textContent = pct(s.server.cpu_pct);

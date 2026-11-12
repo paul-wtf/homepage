@@ -109,7 +109,7 @@ test.describe('language routing', () => {
     expect(index).toContain('https://paul.wtf/sitemap-0.xml');
     const map = await (await request.get('/sitemap-0.xml')).text();
     const locs = [...map.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]).sort();
-    expect(locs).toEqual(['https://paul.wtf', 'https://paul.wtf/en']);
+    expect(locs).toEqual(['https://paul.wtf/', 'https://paul.wtf/en']);
     expect(map).toContain('hreflang="de" href="https://paul.wtf/"');
     expect(map).toContain('hreflang="en" href="https://paul.wtf/en"');
   });

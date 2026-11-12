@@ -126,6 +126,22 @@ const contact = Object.fromEntries(contacts.map((c) => [c.kind, c])) as Record<
   ))}
 </template>
 
+<template data-window data-needs="cluster" data-ws="4" data-label={t.windows.homelab} data-path="~/hardware/homelab">
+  <span class="path">~/hardware/homelab</span>
+  <div class="cluster" data-cluster>
+    <h3 class="card-title">homelab</h3>
+    <dl class="cluster-stats" data-cluster-stats></dl>
+    <div class="cluster-table">
+      <ul class="plain cluster-nodes" data-cluster-nodes></ul>
+      <div class="cluster-total" data-cluster-total hidden></div>
+    </div>
+    <div class="cluster-temps" data-cluster-temps hidden>
+      <span class="cat-label">{t.cluster.temps}</span>
+      <dl></dl>
+    </div>
+  </div>
+</template>
+
 <template data-window data-ws="4" data-label="Laptop" data-path="~/hardware/laptop">
   <span class="path">~/hardware/laptop</span>
   <h3 class="card-title">laptop</h3>

@@ -7,6 +7,7 @@ import { createLauncher, type LauncherEntry } from './launcher';
 import { latest, subscribe } from '../live/status';
 import { markProjects } from '../live/projects';
 import { fillWeek } from '../live/week';
+import { fillCluster } from '../live/cluster';
 import { ui } from '../../data/ui';
 import { lang } from '../lang';
 
@@ -45,7 +46,10 @@ const SEEN_KEY = 'paulwtf:keybinds-seen';
 const INTERACTIVE = 'button, a, input, textarea, select, [contenteditable]';
 const QUALIFIES = '(min-width: 900px) and (pointer: fine)';
 
-const usable = (t: HTMLTemplateElement): boolean => t.dataset.needs !== 'week' || !!latest()?.week;
+const NEEDS = ['week', 'cluster'] as const;
+type Need = (typeof NEEDS)[number];
+const has = (need: Need): boolean => !!latest()?.[need];
+const usable = (t: HTMLTemplateElement): boolean => !t.dataset.needs || has(t.dataset.needs as Need);
 
 function readStore(key: string): string | null {
   try {
@@ -96,7 +100,7 @@ export function initDesktop(): DesktopApi {
   let scratch: Workspace | null = null;
   let scratchOn = false;
   let scratchTimer = 0;
-  let hadWeek = false;
+  let had = new Set<Need>();
   const overviewEl = document.createElement('div');
   overviewEl.className = 'wm-overview';
   overviewEl.setAttribute('role', 'group');
@@ -120,6 +124,7 @@ export function initDesktop(): DesktopApi {
     revealEmails(el);
     markProjects(el);
     fillWeek(el);
+    fillCluster(el);
     el.addEventListener('mouseenter', () => setFocus(el));
     el.addEventListener('focusin', () => setFocus(el, false));
     return el;
@@ -150,7 +155,7 @@ export function initDesktop(): DesktopApi {
       layers.push(layer);
       spaces.push({ layer, wins: [], focus: null, full: null });
     }
-    hadWeek = !!latest()?.week;
+    had = new Set(NEEDS.filter(has));
     for (const t of document.querySelectorAll<HTMLTemplateElement>('template[data-window]')) {
       const space = ws(Number(t.dataset.ws));
       if (!space || !usable(t)) continue;
@@ -560,17 +565,32 @@ export function initDesktop(): DesktopApi {
     add(el, focus);
   }
 
-  function weekArrived(): void {
-    if (!on || hadWeek || !latest()?.week) return;
-    hadWeek = true;
-    for (const t of document.querySelectorAll<HTMLTemplateElement>('template[data-window][data-needs="week"]')) {
-      const space = ws(Number(t.dataset.ws));
-      if (!space) continue;
-      const el = fromTemplate(t);
-      space.wins.push(el);
-      space.layer.append(el);
-      layout(space);
-      popIn([el], 20);
+  function dataArrived(): void {
+    if (!on) return;
+    const fresh = NEEDS.filter((need) => !had.has(need) && has(need));
+    if (fresh.length === 0) return;
+    const order = [...document.querySelectorAll<HTMLTemplateElement>('template[data-window]')].map((t) => t.dataset.path);
+    const rank = (path: string | undefined) => {
+      const i = order.indexOf(path);
+      return i < 0 ? Infinity : i;
+    };
+    for (const need of fresh) {
+      had.add(need);
+      for (const t of document.querySelectorAll<HTMLTemplateElement>(`template[data-window][data-needs="${need}"]`)) {
+        const space = ws(Number(t.dataset.ws));
+        if (!space) continue;
+        const el = fromTemplate(t);
+        const at = space.wins.findIndex((w) => rank(w.dataset.path) > rank(t.dataset.path));
+        if (at < 0) {
+          space.wins.push(el);
+          space.layer.append(el);
+        } else {
+          space.layer.insertBefore(el, space.wins[at]);
+          space.wins.splice(at, 0, el);
+        }
+        layout(space);
+        popIn([el], 20);
+      }
     }
     refreshBar();
   }
@@ -822,7 +842,7 @@ export function initDesktop(): DesktopApi {
   media.addEventListener('change', sync);
   sync();
 
-  subscribe(weekArrived);
+  subscribe(dataArrived);
   if (readStore(MODE_KEY) === 'desktop') enter();
 
   instance = {
